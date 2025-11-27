@@ -8,18 +8,31 @@
 
 **Goal:** Allow users to manage Projects and upload documents to specific project folders.
 
+
+
 - **Story 2.1: Project Management (Backend)**
-  - [ ] **Task:** Create `Project` entity (id, name, status, gcsPrefix, dataStoreId, engineId).
-  - [ ] **Task:** Implement `ProjectRepository` (Firestore) and Service.
-  - [ ] **Task:** Implement API `POST /api/projects` (Create) and `GET /api/projects` (List).
+
+  - [x] **Task:** Create `Project` entity (id, name, status, gcsPrefix, dataStoreId, engineId).
+
+  - [x] **Task:** Implement `ProjectRepository` (Firestore) and Service.
+
+  - [x] **Task:** Implement API `POST /api/projects` (Create) and `GET /api/projects` (List).
+
 - **Story 2.2: Scoped GCS Operations**
-  - [ ] **Task:** Update `DocumentService` to accept `projectId`.
-  - [ ] **Task:** Update `GET /api/documents/upload-url` to take `projectId` -> path: `projectId/filename`.
-  - [ ] **Task:** Update `GET /api/documents` to take `projectId` and filter GCS list by prefix.
+
+  - [x] **Task:** Update `DocumentService` to accept `projectId`.
+
+  - [x] **Task:** Update `GET /api/documents/upload-url` to take `projectId` -> path: `projectId/filename`.
+
+  - [x] **Task:** Update `GET /api/documents` to take `projectId` and filter GCS list by prefix.
+
 - **Story 2.3: Project UI**
-  - [ ] **Task:** Create Project Dashboard (List Projects + "New Project" button).
-  - [ ] **Task:** Update Sidebar to show active Project context.
-  - [ ] **Task:** Update Document Upload/List to use active `projectId`.
+
+  - [x] **Task:** Create Project Dashboard (List Projects + "New Project" button).
+
+  - [x] **Task:** Update Sidebar to show active Project context.
+
+  - [x] **Task:** Update Document Upload/List to use active `projectId`.
 
 ## Epic 3: Search Infrastructure Automation (Per Project)
 
