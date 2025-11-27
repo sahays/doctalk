@@ -21,16 +21,17 @@ public class DocumentController {
     }
 
     @GetMapping
-    public ResponseEntity<List<DocumentSummary>> listDocuments() {
-        return ResponseEntity.ok(documentService.listDocuments());
+    public ResponseEntity<List<DocumentSummary>> listDocuments(@RequestParam("projectId") String projectId) {
+        return ResponseEntity.ok(documentService.listDocuments(projectId));
     }
 
     @GetMapping("/upload-url")
     public ResponseEntity<Map<String, String>> getUploadUrl(
+            @RequestParam("projectId") String projectId,
             @RequestParam("fileName") String fileName,
             @RequestParam("contentType") String contentType) {
         
-        URL signedUrl = documentService.generateUploadSignedUrl(fileName, contentType);
+        URL signedUrl = documentService.generateUploadSignedUrl(projectId, fileName, contentType);
         
         return ResponseEntity.ok(Map.of(
             "url", signedUrl.toString(),

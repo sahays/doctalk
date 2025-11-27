@@ -4,14 +4,17 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { FileText, MessageSquare, Settings, LayoutDashboard } from 'lucide-react';
+import { FileText, MessageSquare, Settings, LayoutDashboard, Folder } from 'lucide-react';
+import { useProjectStore } from '@/store/projectStore';
 
 interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {}
 
 export function Sidebar({ className }: SidebarProps) {
   const pathname = usePathname();
+  const { activeProject } = useProjectStore();
 
   const menuItems = [
+    { name: 'Projects', href: '/projects', icon: Folder },
     { name: 'Documents', href: '/documents', icon: FileText },
     { name: 'Chat', href: '/chat', icon: MessageSquare },
     { name: 'Settings', href: '/settings', icon: Settings },
@@ -24,6 +27,12 @@ export function Sidebar({ className }: SidebarProps) {
           <h2 className="mb-2 px-4 text-lg font-semibold tracking-tight text-slate-900">
             DocTalk
           </h2>
+          {activeProject && (
+            <div className="px-4 mb-4">
+                <div className="text-xs font-medium text-gray-500 uppercase">Active Project</div>
+                <div className="text-sm font-bold truncate">{activeProject.name}</div>
+            </div>
+          )}
           <div className="space-y-1">
             {menuItems.map((item) => (
               <Link key={item.href} href={item.href}>

@@ -3,8 +3,16 @@
 ## 1. Project Overview
 
 **DocTalk** is a Retrieval-Augmented Generation (RAG) application designed to allow support staff to "chat" with a
-corpus of Standard Operating Procedures (SOPs) and Knowledge Base (KB) articles. The system automates the ingestion of
-documents into Google Cloud's Vertex AI Search (VAIS) and uses the Gemini 3 Pro model to generate grounded responses.
+corpus of Standard Operating Procedures (SOPs) and Knowledge Base (KB) articles.
+
+**Key Concept: Projects** The application is multi-tenant based on "Projects".
+
+- **Project:** A logical container with its own Documents, Search Index, and Chat History.
+- **Isolation:**
+  - **Storage:** Documents are stored in `gs://bucket/<project-id>/`.
+  - **Search:** Each Project has its own dedicated **Vertex AI Search Data Store** and **Engine**.
+  - **Chat:** Conversations are bound to a specific Project.
+- **Prompts:** Global/Independent (shared across projects).
 
 ## 2. Technical Architecture
 
@@ -16,80 +24,64 @@ documents into Google Cloud's Vertex AI Search (VAIS) and uses the Gemini 3 Pro 
   - **Form Management:** React Hook Form + Zod (Validation)
   - **Icons:** Lucide React
 - **Backend:** Java Spring Boot
-
-* Build Tool: Maven/Gradle
   - SDKs:
     - `google-cloud-storage` (GCS operations)
     - `google-cloud-discoveryengine` (Vertex AI Search automation & retrieval)
     - `com.google.genai:google-genai` (Vertex AI Gemini API - Latest)
     - `google-cloud-firestore` (Database)
-* **Database:** Google Cloud Firestore (Native Mode)
-  - Stores: System Prompts, Chat Sessions, Message History.
-* **Infrastructure (GCP):**
+- **Database:** Google Cloud Firestore (Native Mode)
+  - Stores: **Projects**, System Prompts, Chat Sessions, Message History.
+- **Infrastructure (GCP):**
   - **Identity:** Google Cloud IAM (Service Account Impersonation for local dev).
   - **Storage:** Google Cloud Storage (GCS) - Standard Bucket.
-  - **Search/Retrieval:** Vertex AI Search (Generic Data Store for unstructured data).
+  - **Search/Retrieval:** Vertex AI Search (One Data Store per Project).
   - **LLM:** Vertex AI Gemini API (Target Model: `gemini-3.0-pro` or latest available alias).
 
 ### 2.2. Key Workflows
 
-1.  **Auth:** Local development uses `gcloud auth application-default login --impersonate-service-account...`. The app
-    inherits these credentials.
-2.  **Upload:** Frontend requests a Write-Signed URL from Backend -> Uploads file directly to GCS.
-3.  **Indexing:** Backend detects uploads or user triggers "Sync"; calls Discovery Engine API to create/update Data
-    Store.
+1.  **Project Creation:**
+    - User creates a Project (Name).
+    - Backend generates `projectId` (GUID).
+    - Backend triggers async provisioning of **VAIS Data Store** (`doctalk-<projectId>`) and **Engine**.
+2.  **Upload:**
+    - User selects active Project.
+    - Frontend requests Write-Signed URL for path `gs://bucket/<projectId>/<filename>`.
+    - Backend generates URL with prefix.
+3.  **Indexing:**
+    - Each Project's Data Store is configured to sync from `gs://bucket/<projectId>/`.
 4.  **RAG Chat (Streaming):**
-    - User selects a Prompt (System Instruction).
-    - User sends query (Context: specific conversation ID).
-    - Backend retrieves conversation history from Firestore.
-    - Backend calls VAIS (`SearchServiceClient`) to retrieve context.
-    - Backend constructs prompt + Context + History + Query.
-    - Backend calls Vertex AI Gemini (`Client`) with streaming enabled.
-    - Response is streamed (SSE) to Frontend and asynchronously saved to Firestore.
+    - User enters Chat for a Project.
+    - Backend resolves the Project's specific **Search Engine ID**.
+    - Backend calls VAIS (`SearchServiceClient`) on that Engine.
+    - Backend calls Gemini with context.
 
 ## 3. Detailed Scope & Features
 
+### 3.0. Project Management
+
+- **Dashboard:** List all available projects.
+- **Create Project:** Form to start a new workspace.
+- **Context Switching:** Sidebar/Header allows switching active Project.
+
 ### 3.1. Document Management
 
-- **Bulk Upload:**
-  - Multi-select file picker in UI.
-  - Direct-to-GCS upload to minimize server load.
-  - Supported formats: PDF, TXT, DOCX, HTML (as supported by VAIS).
-- **Document List:**
-  - View all files currently in the GCS bucket.
-  - Metadata display: Filename, Size, Uploaded At.
+- **Scoped Upload:** Files are placed in project-specific folders.
+- **Scoped List:** Only list files matching `prefix=<projectId>/`.
 
 ### 3.2. Automated Search Infrastructure
 
-- **Provisioning:**
-  - App checks for existence of Vertex AI Search Data Store.
-  - If missing, automates creation using `Discovery Engine API`.
-  - **Specifics:** Creates a Generic Data Store for Unstructured Data (GCS Source).
-  - Links GCS bucket as the source.
-- **Status Monitoring:**
-  - (Optional MVP) Check indexing status.
+- **Per-Project Provisioning:**
+  - Automates creation of Data Store `doctalk-<projectId>` pointing to `gs://bucket/<projectId>/`.
+  - Automates creation of Search App `doctalk-app-<projectId>`.
+- **Status Tracking:** Firestore tracks `provisioningStatus` (PROVISIONING, READY, FAILED) for each project.
 
 ### 3.3. Prompt Management
 
-- **Prompt Library:**
-  - UI to Create, Read, Update, Delete (CRUD) system prompts.
-  - _Example:_ "You are a Level 2 Support Agent. Be concise." vs "Explain like I'm 5."
-  - **Storage:** Firestore collection `prompts`.
-- **Selection:**
-  - Dropdown in Chat Interface to switch active persona/prompt.
+- **Prompt Library:** Global prompts available to all projects.
 
 ### 3.4. Chat Interface
 
-- **Modern Streaming UI:**
-  - Real-time text streaming (typing effect) similar to Gemini/ChatGPT.
-  - Chat history sidebar (list of past conversations).
-  - Markdown rendering for Bot responses.
-- **Gemini 3 Pro Integration:**
-  - Utilizes the high-context window and advanced reasoning of Gemini 3 Pro.
-- **Citations:**
-  - Visual indicator of which documents were used to generate the answer (Grounding).
-- **Persistence:**
-  - All chat sessions and messages are stored in Firestore for continuity.
+- **Project-Scoped Chat:** History is stored under `projects/{projectId}/chats/...`.
 
 ## 4. Constraints & Assumptions
 
@@ -102,6 +94,6 @@ documents into Google Cloud's Vertex AI Search (VAIS) and uses the Gemini 3 Pro 
 ## 5. Timeline & Milestones
 
 - **Phase 1:** Foundation (Spring Boot Init, Next.js Init, GCS Upload).
-- **Phase 2:** Search Automation (Generic Search Setup & Integration).
+- **Phase 2:** Project Management & Search Automation (Per-Project Data Stores).
 - **Phase 3:** RAG Implementation (Native SDK + Gemini).
 - **Phase 4:** UI Polish (Prompts, Chat UX).

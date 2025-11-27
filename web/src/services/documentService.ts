@@ -8,23 +8,23 @@ export interface DocumentSummary {
     updated: string;
 }
 
-export async function getDocuments(): Promise<DocumentSummary[]> {
-    const response = await fetch(`${API_BASE_URL}/documents`);
+export async function getDocuments(projectId: string): Promise<DocumentSummary[]> {
+    const response = await fetch(`${API_BASE_URL}/documents?projectId=${projectId}`);
     if (!response.ok) {
         throw new Error('Failed to fetch documents');
     }
     return response.json();
 }
 
-export async function getUploadUrl(fileName: string, contentType: string): Promise<{ url: string; fileName: string }> {
-  const response = await fetch(`${API_BASE_URL}/documents/upload-url?fileName=${encodeURIComponent(fileName)}&contentType=${encodeURIComponent(contentType)}`);
+export async function getUploadUrl(projectId: string, fileName: string, contentType: string): Promise<{ url: string; fileName: string }> {
+  const response = await fetch(`${API_BASE_URL}/documents/upload-url?projectId=${projectId}&fileName=${encodeURIComponent(fileName)}&contentType=${encodeURIComponent(contentType)}`);
   if (!response.ok) {
     throw new Error('Failed to get upload URL');
   }
   return response.json();
 }
 
-export async function uploadFileToGcs(signedUrl: string, file: File, onProgress?: (progress: number) => void): Promise<void> {
+async function uploadFileToGcs(signedUrl: string, file: File, onProgress?: (progress: number) => void): Promise<void> {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open('PUT', signedUrl, true);
@@ -52,9 +52,9 @@ export async function uploadFileToGcs(signedUrl: string, file: File, onProgress?
   });
 }
 
-export async function uploadFile(file: File, onProgress?: (progress: number) => void) {
+export async function uploadFile(projectId: string, file: File, onProgress?: (progress: number) => void) {
     // 1. Get Signed URL
-    const { url } = await getUploadUrl(file.name, file.type);
+    const { url } = await getUploadUrl(projectId, file.name, file.type);
     
     // 2. Upload to GCS
     await uploadFileToGcs(url, file, onProgress);

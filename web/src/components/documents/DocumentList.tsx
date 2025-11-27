@@ -4,17 +4,21 @@ import { useEffect, useState } from 'react';
 import { DocumentSummary, getDocuments } from '@/services/documentService';
 import { FileText, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useProjectStore } from '@/store/projectStore';
 
 export function DocumentList({ refreshTrigger }: { refreshTrigger: number }) {
+    const { activeProject } = useProjectStore();
     const [documents, setDocuments] = useState<DocumentSummary[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     const fetchDocuments = async () => {
+        if (!activeProject) return;
+        
         setLoading(true);
         setError(null);
         try {
-            const docs = await getDocuments();
+            const docs = await getDocuments(activeProject.id);
             setDocuments(docs);
         } catch (err) {
             setError('Failed to load documents');
@@ -25,12 +29,21 @@ export function DocumentList({ refreshTrigger }: { refreshTrigger: number }) {
     };
 
     useEffect(() => {
-        fetchDocuments();
-    }, [refreshTrigger]);
+        if (activeProject) {
+            fetchDocuments();
+        } else {
+            setDocuments([]);
+        }
+    }, [refreshTrigger, activeProject]);
+
+    if (!activeProject) {
+        return <div className="text-center p-8 text-gray-500">Please select a project to view documents.</div>;
+    }
 
     if (loading && documents.length === 0) {
         return <div className="text-center p-8 text-gray-500">Loading documents...</div>;
     }
+// ...
 
     if (error) {
         return (

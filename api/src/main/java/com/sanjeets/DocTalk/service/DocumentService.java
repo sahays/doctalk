@@ -27,8 +27,9 @@ public class DocumentService {
         this.storage = storage;
     }
 
-    public URL generateUploadSignedUrl(String fileName, String contentType) {
-        BlobInfo blobInfo = BlobInfo.newBuilder(bucketName, fileName)
+    public URL generateUploadSignedUrl(String projectId, String fileName, String contentType) {
+        String objectName = projectId + "/" + fileName;
+        BlobInfo blobInfo = BlobInfo.newBuilder(bucketName, objectName)
                 .setContentType(contentType)
                 .build();
 
@@ -45,17 +46,18 @@ public class DocumentService {
         );
     }
 
-    public List<DocumentSummary> listDocuments() {
+    public List<DocumentSummary> listDocuments(String projectId) {
         var bucket = storage.get(bucketName);
         if (bucket == null) {
             throw new RuntimeException("GCS Bucket '" + bucketName + "' not found. Please verify configuration.");
         }
         
-        Iterable<Blob> blobs = bucket.list().iterateAll();
+        Iterable<Blob> blobs = bucket.list(Storage.BlobListOption.prefix(projectId + "/")).iterateAll();
 
         return StreamSupport.stream(blobs.spliterator(), false)
+                .filter(blob -> !blob.getName().endsWith("/")) // Exclude the folder itself if returned
                 .map(blob -> DocumentSummary.builder()
-                        .name(blob.getName())
+                        .name(blob.getName().substring(projectId.length() + 1)) // Strip prefix from name for display
                         .contentType(blob.getContentType())
                         .size(blob.getSize())
                         .timeCreated(blob.getCreateTimeOffsetDateTime().toString())

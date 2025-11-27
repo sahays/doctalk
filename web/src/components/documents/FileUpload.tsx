@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { uploadFile } from '@/services/documentService';
 import { cn } from '@/lib/utils';
+import { useProjectStore } from '@/store/projectStore';
 
 interface FileUploadProps {
   onUploadComplete?: () => void;
@@ -20,6 +21,7 @@ interface FileStatus {
 }
 
 export function FileUpload({ onUploadComplete }: FileUploadProps) {
+  const { activeProject } = useProjectStore();
   const [files, setFiles] = useState<FileStatus[]>([]);
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
@@ -40,6 +42,11 @@ export function FileUpload({ onUploadComplete }: FileUploadProps) {
   };
 
   const handleUpload = async () => {
+    if (!activeProject) {
+        alert("Please select a project first.");
+        return;
+    }
+
     const pendingFiles = files.filter((f) => f.status === 'pending');
 
     for (const fileStatus of pendingFiles) {
@@ -52,7 +59,7 @@ export function FileUpload({ onUploadComplete }: FileUploadProps) {
       );
 
       try {
-        await uploadFile(fileStatus.file, (progress) => {
+        await uploadFile(activeProject.id, fileStatus.file, (progress) => {
           setFiles((prev) =>
             prev.map((f) =>
               f.file.name === fileStatus.file.name
