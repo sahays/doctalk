@@ -1,0 +1,12 @@
+spring:
+  application:
+    name: DocTalk
+
+doctalk:
+  gcp:
+    project-id: ${GOOGLE_CLOUD_PROJECT:search-and-reco}
+  gcs:
+    bucket-name: ${GCS_BUCKET_NAME:doctalk-docs}
+  search:
+    location: global
+    data-store-id: doctalk-knowledge-base

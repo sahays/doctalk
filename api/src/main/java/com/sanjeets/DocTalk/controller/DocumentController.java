@@ -2,7 +2,6 @@ package com.sanjeets.DocTalk.controller;
 
 import com.sanjeets.DocTalk.model.dto.DocumentSummary;
 import com.sanjeets.DocTalk.service.DocumentService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -12,11 +11,14 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/documents")
-@RequiredArgsConstructor
 @CrossOrigin(origins = "http://localhost:3000") // Allow frontend access
 public class DocumentController {
 
     private final DocumentService documentService;
+
+    public DocumentController(DocumentService documentService) {
+        this.documentService = documentService;
+    }
 
     @GetMapping
     public ResponseEntity<List<DocumentSummary>> listDocuments() {

@@ -14,7 +14,7 @@ import java.io.IOException;
 @Configuration
 public class GcpConfig {
 
-    @Value("${spring.cloud.gcp.project-id}")
+    @Value("${doctalk.gcp.project-id}")
     private String projectId;
 
     @Bean

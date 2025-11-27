@@ -46,7 +46,12 @@ public class DocumentService {
     }
 
     public List<DocumentSummary> listDocuments() {
-        Iterable<Blob> blobs = storage.get(bucketName).list().iterateAll();
+        var bucket = storage.get(bucketName);
+        if (bucket == null) {
+            throw new RuntimeException("GCS Bucket '" + bucketName + "' not found. Please verify configuration.");
+        }
+        
+        Iterable<Blob> blobs = bucket.list().iterateAll();
 
         return StreamSupport.stream(blobs.spliterator(), false)
                 .map(blob -> DocumentSummary.builder()
