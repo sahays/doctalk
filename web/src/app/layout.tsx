@@ -17,11 +17,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${GeistSans.variable} ${GeistMono.variable} font-sans antialiased flex min-h-screen`}
+        className={`${GeistSans.variable} ${GeistMono.variable} font-sans antialiased flex flex-col md:flex-row min-h-screen`}
       >
-        <Sidebar className="hidden md:block" />
-        <main className="flex-1 p-8">
-          <div className="mx-auto max-w-xl">
+        <Sidebar className="hidden md:block shrink-0" />
+        <main className="flex-1 p-4 md:p-8 overflow-x-hidden w-full">
+          <div className="mx-auto max-w-xl w-full">
             {children}
           </div>
         </main>

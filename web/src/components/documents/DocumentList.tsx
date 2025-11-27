@@ -44,8 +44,8 @@ export function DocumentList({ refreshTrigger }: { refreshTrigger: number }) {
     }
 
     return (
-        <div className="mt-8">
-            <div className="flex items-center justify-between mb-4">
+        <div className="mt-8 space-y-4">
+            <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold">Available Documents ({documents.length})</h3>
                 <Button variant="ghost" size="sm" onClick={fetchDocuments}>
                     <RefreshCw className="h-4 w-4 mr-2" />
@@ -53,40 +53,33 @@ export function DocumentList({ refreshTrigger }: { refreshTrigger: number }) {
                 </Button>
             </div>
             
-            <div className="border rounded-lg overflow-hidden bg-white shadow-sm">
-                <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                        <tr>
-                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Size</th>
-                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Uploaded</th>
-                        </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                        {documents.length === 0 ? (
-                             <tr>
-                                <td colSpan={4} className="px-6 py-8 text-center text-sm text-gray-500">
-                                    No documents found. Upload some above.
-                                </td>
-                            </tr>
-                        ) : (
-                            documents.map((doc) => (
-                                <tr key={doc.name}>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        <div className="flex items-center">
-                                            <FileText className="h-5 w-5 text-gray-400 mr-2" />
-                                            <span className="text-sm font-medium text-gray-900">{doc.name}</span>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{doc.contentType}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{(doc.size / 1024).toFixed(1)} KB</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(doc.timeCreated).toLocaleDateString()}</td>
-                                </tr>
-                            ))
-                        )}
-                    </tbody>
-                </table>
+            <div className="grid gap-4">
+                {documents.length === 0 ? (
+                    <div className="p-8 text-center text-sm text-gray-500 border rounded-lg bg-slate-50 border-dashed">
+                        No documents found. Upload some above.
+                    </div>
+                ) : (
+                    documents.map((doc) => (
+                        <div key={doc.name} className="flex items-center justify-between p-4 bg-white border rounded-lg shadow-sm hover:shadow-md transition-shadow">
+                            <div className="flex items-center gap-4 overflow-hidden">
+                                <div className="p-2 bg-blue-50 rounded-lg shrink-0">
+                                    <FileText className="h-6 w-6 text-blue-500" />
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                    <p className="text-sm font-medium text-gray-900 truncate" title={doc.name}>
+                                        {doc.name.length > 35 ? doc.name.substring(0, 32) + '...' : doc.name}
+                                    </p>
+                                    <p className="text-xs text-gray-500 truncate">
+                                        {(doc.size / 1024).toFixed(1)} KB • {doc.contentType}
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="text-xs text-gray-400 whitespace-nowrap ml-4">
+                                {new Date(doc.timeCreated).toLocaleDateString()}
+                            </div>
+                        </div>
+                    ))
+                )}
             </div>
         </div>
     );
