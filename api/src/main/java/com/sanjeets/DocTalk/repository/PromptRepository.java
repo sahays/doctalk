@@ -2,7 +2,7 @@ package com.sanjeets.DocTalk.repository;
 
 import com.google.api.core.ApiFuture;
 import com.google.cloud.firestore.*;
-import com.sanjeets.DocTalk.model.entity.Project;
+import com.sanjeets.DocTalk.model.entity.Prompt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Repository;
@@ -12,50 +12,51 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 @Repository
-public class ProjectRepository {
+public class PromptRepository {
 
-    private static final Logger log = LoggerFactory.getLogger(ProjectRepository.class);
+    private static final Logger log = LoggerFactory.getLogger(PromptRepository.class);
     private final Firestore firestore;
-    private static final String COLLECTION_NAME = "doctalk-projects";
+    private static final String COLLECTION_NAME = "doctalk-prompts";
 
-    public ProjectRepository(Firestore firestore) {
+    public PromptRepository(Firestore firestore) {
         this.firestore = firestore;
     }
 
-    public void save(Project project) {
-        ApiFuture<WriteResult> future = firestore.collection(COLLECTION_NAME).document(project.getId()).set(project);
+    public void save(Prompt prompt) {
+        ApiFuture<WriteResult> future = firestore.collection(COLLECTION_NAME).document(prompt.getId()).set(prompt);
         try {
             future.get();
         } catch (InterruptedException | ExecutionException e) {
-            log.error("Failed to save project", e);
+            log.error("Failed to save prompt", e);
             throw new RuntimeException("Database error", e);
         }
     }
 
-    public Project findById(String id) {
+    public void delete(String id) {
+        ApiFuture<WriteResult> future = firestore.collection(COLLECTION_NAME).document(id).delete();
         try {
-            DocumentSnapshot document = firestore.collection(COLLECTION_NAME).document(id).get().get();
-            if (document.exists()) {
-                return document.toObject(Project.class);
-            }
-            return null;
+            future.get();
         } catch (InterruptedException | ExecutionException e) {
-            log.error("Failed to find project", e);
+            log.error("Failed to delete prompt", e);
             throw new RuntimeException("Database error", e);
         }
     }
 
-    public List<Project> findAll() {
+    public List<Prompt> findAll() {
         try {
             ApiFuture<QuerySnapshot> future = firestore.collection(COLLECTION_NAME).get();
             List<QueryDocumentSnapshot> documents = future.get().getDocuments();
-            List<Project> projects = new ArrayList<>();
+            List<Prompt> prompts = new ArrayList<>();
             for (DocumentSnapshot document : documents) {
-                projects.add(document.toObject(Project.class));
+                Prompt prompt = document.toObject(Prompt.class);
+                if (prompt != null) {
+                    prompt.setId(document.getId());
+                    prompts.add(prompt);
+                }
             }
-            return projects;
+            return prompts;
         } catch (InterruptedException | ExecutionException e) {
-            log.error("Failed to list projects", e);
+            log.error("Failed to list prompts", e);
             throw new RuntimeException("Database error", e);
         }
     }

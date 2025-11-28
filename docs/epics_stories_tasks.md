@@ -23,6 +23,8 @@
   - [x] **Task:** Update `GET /api/documents/upload-url` to take `projectId` -> path: `projectId/filename`.
 
   - [x] **Task:** Update `GET /api/documents` to take `projectId` and filter GCS list by prefix.
+  
+  - [x] **Task:** Implement `DELETE /api/documents` to delete file from GCS.
 
 - **Story 2.3: Project UI**
 
@@ -31,6 +33,8 @@
   - [x] **Task:** Update Sidebar to show active Project context.
 
   - [x] **Task:** Update Document Upload/List to use active `projectId`.
+  
+  - [x] **Task:** Add "Delete" action to Document List.
 
 ## Epic 3: Search Infrastructure Automation (Per Project)
 
@@ -45,14 +49,16 @@
   - [x] **Task:** Implement `getDocumentCount(projectId)` to check indexing status.
   - [x] **Task:** Expose `POST /api/projects/{id}/sync` and `GET /api/projects/{id}/status`.
   - [x] **Task:** Update Project UI to show "Indexed Documents: X" and "Sync" button.
+  - [x] **Task:** Implement robust status polling (RUNNING/COMPLETED/FAILED) with accurate timestamps.
 
-## Epic 4: Prompt Management
+## Epic 4: System Instruction Prompts
 
-**Goal:** Global prompts.
+**Goal:** Allow users to define global system instructions (personas) that guide the AI's behavior.
 
 - **Story 4.1: Prompt CRUD**
-  - [ ] **Task:** Create `Prompt` entity and Firestore repository.
+  - [ ] **Task:** Create `Prompt` entity (id, name, content, isDefault) and Firestore repository.
   - [ ] **Task:** Implement API and UI for managing prompts.
+  - [ ] **Task:** Implement logic to retrieve the active/default prompt for use as System Instruction in Chat.
 
 ## Epic 5: RAG Chat Experience (Scoped)
 

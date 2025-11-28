@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { FileText, MessageSquare, Settings, LayoutDashboard, Folder } from 'lucide-react';
+import { FileText, MessageSquare, Settings, LayoutDashboard, Folder, MessagesSquare } from 'lucide-react';
 import { useProjectStore } from '@/store/projectStore';
 
 interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {}
@@ -17,8 +17,9 @@ export function Sidebar({ className }: SidebarProps) {
     { name: 'Projects', href: '/projects', icon: Folder },
     { name: 'Documents', href: '/documents', icon: FileText },
     { name: 'Chat', href: '/chat', icon: MessageSquare },
-    { name: 'Settings', href: '/settings', icon: Settings },
-  ];
+    { name: 'System Instructions', icon: MessagesSquare, href: '/prompts', color: 'text-violet-500' },
+    { name: 'Settings', icon: Settings, href: '/settings', color: 'text-gray-500' },
+];
 
   return (
     <div className={cn("pb-12 w-64 border-r min-h-screen bg-slate-50/50", className)}>
