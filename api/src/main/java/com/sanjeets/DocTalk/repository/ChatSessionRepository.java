@@ -1,16 +1,18 @@
 package com.sanjeets.DocTalk.repository;
 
-import com.google.api.core.ApiFuture;
-import com.google.cloud.firestore.*;
-import com.sanjeets.DocTalk.model.entity.ChatMessage;
-import com.sanjeets.DocTalk.model.entity.ChatSession;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Repository;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.ExecutionException;
+import com.google.cloud.firestore.DocumentSnapshot;
+import com.google.cloud.firestore.Firestore;
+import com.google.cloud.firestore.Query;
+import com.google.cloud.firestore.QuerySnapshot;
+import com.sanjeets.DocTalk.model.entity.ChatMessage;
+import com.sanjeets.DocTalk.model.entity.ChatSession;
 
 @Repository
 public class ChatSessionRepository {
@@ -51,7 +53,6 @@ public class ChatSessionRepository {
         try {
             QuerySnapshot query = firestore.collection(SESSIONS_COLLECTION)
                     .whereEqualTo("projectId", projectId)
-                    .orderBy("createdAt", Query.Direction.DESCENDING)
                     .get()
                     .get();
             return query.toObjects(ChatSession.class);

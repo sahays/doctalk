@@ -1,23 +1,40 @@
 package com.sanjeets.DocTalk.service;
 
-import com.google.cloud.vertexai.VertexAI;
-import com.google.cloud.vertexai.api.*;
-import com.google.cloud.vertexai.generativeai.ContentMaker;
-import com.google.cloud.vertexai.generativeai.GenerativeModel;
-import com.google.cloud.vertexai.generativeai.ResponseHandler;
-import com.google.common.collect.ImmutableList;
-import com.sanjeets.DocTalk.model.entity.*;
-import com.sanjeets.DocTalk.repository.ChatSessionRepository;
-import com.sanjeets.DocTalk.repository.ProjectRepository;
-import com.sanjeets.DocTalk.repository.PromptRepository;
+import java.io.IOException;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
-import java.time.Instant;
-import java.util.*;
+import com.google.cloud.vertexai.VertexAI;
+import com.google.cloud.vertexai.api.Candidate;
+import com.google.cloud.vertexai.api.Content;
+import com.google.cloud.vertexai.api.GenerateContentResponse;
+import com.google.cloud.vertexai.api.GoogleSearchRetrieval;
+import com.google.cloud.vertexai.api.GroundingChunk;
+import com.google.cloud.vertexai.api.GroundingMetadata;
+import com.google.cloud.vertexai.api.Retrieval;
+import com.google.cloud.vertexai.api.Tool;
+import com.google.cloud.vertexai.api.VertexAISearch;
+import com.google.cloud.vertexai.generativeai.ContentMaker;
+import com.google.cloud.vertexai.generativeai.GenerativeModel;
+import com.google.cloud.vertexai.generativeai.ResponseHandler;
+import com.sanjeets.DocTalk.model.entity.ChatMessage;
+import com.sanjeets.DocTalk.model.entity.ChatSession;
+import com.sanjeets.DocTalk.model.entity.MessageRole;
+import com.sanjeets.DocTalk.model.entity.Project;
+import com.sanjeets.DocTalk.model.entity.Prompt;
+import com.sanjeets.DocTalk.repository.ChatSessionRepository;
+import com.sanjeets.DocTalk.repository.ProjectRepository;
+import com.sanjeets.DocTalk.repository.PromptRepository;
 
 @Service
 public class ChatService {
@@ -31,13 +48,17 @@ public class ChatService {
     @Value("${doctalk.gcp.project-id}")
     private String gcpProjectId;
 
+    @Value("${doctalk.chat.location:us-central1}")
+    private String vertexAiLocation;
+
     @Value("${doctalk.search.location:global}")
-    private String location;
+    private String searchLocation;
 
     @Value("${doctalk.chat.model:gemini-1.5-flash-001}")
     private String modelName;
 
-    public ChatService(ChatSessionRepository chatSessionRepository, ProjectRepository projectRepository, PromptRepository promptRepository) {
+    public ChatService(ChatSessionRepository chatSessionRepository, ProjectRepository projectRepository,
+            PromptRepository promptRepository) {
         this.chatSessionRepository = chatSessionRepository;
         this.projectRepository = projectRepository;
         this.promptRepository = promptRepository;
@@ -55,14 +76,15 @@ public class ChatService {
                 projectId,
                 promptId,
                 title,
-                Instant.now().toString()
-        );
+                Instant.now().toString());
         chatSessionRepository.saveSession(session);
         return session;
     }
 
     public List<ChatSession> getSessions(String projectId) {
-        return chatSessionRepository.getSessionsByProject(projectId);
+        List<ChatSession> sessions = chatSessionRepository.getSessionsByProject(projectId);
+        sessions.sort((s1, s2) -> s2.getCreatedAt().compareTo(s1.getCreatedAt())); // Descending order
+        return sessions;
     }
 
     public List<ChatMessage> getMessages(String sessionId) {
@@ -70,11 +92,20 @@ public class ChatService {
     }
 
     public ChatMessage sendMessage(String sessionId, String userMessageText) {
+
+        log.info("sendMessage called for sessionId: {}", sessionId);
+
         ChatSession session = chatSessionRepository.getSession(sessionId);
-        if (session == null) throw new IllegalArgumentException("Session not found");
+
+        if (session == null)
+            throw new IllegalArgumentException("Session not found");
 
         Project project = projectRepository.findById(session.getProjectId());
-        if (project == null) throw new IllegalArgumentException("Project not found");
+        if (project == null)
+            throw new IllegalArgumentException("Project not found");
+
+        log.info("Using GCP Project: {}, VertexAI Location: {}, Model: {}, DataStore: {}",
+                gcpProjectId, vertexAiLocation, modelName, project.getDataStoreId());
 
         // 1. Save User Message
         ChatMessage userMessage = new ChatMessage(
@@ -82,63 +113,67 @@ public class ChatService {
                 sessionId,
                 MessageRole.USER,
                 userMessageText,
-                Instant.now().toString()
-        );
+                Instant.now().toString());
         chatSessionRepository.saveMessage(userMessage);
 
         // 2. Prepare Gemini Request
-        try (VertexAI vertexAI = new VertexAI(gcpProjectId, location)) {
-            
+        try (VertexAI vertexAI = new VertexAI(gcpProjectId, vertexAiLocation)) {
+
             // System Instruction (Persona)
             Content systemInstruction = null;
             if (session.getPromptId() != null) {
-                 Prompt prompt = promptRepository.findById(session.getPromptId());
-                 if (prompt != null) {
-                     systemInstruction = ContentMaker.fromMultiModalData(prompt.getContent());
-                 }
+                Prompt prompt = promptRepository.findById(session.getPromptId());
+                if (prompt != null) {
+                    systemInstruction = ContentMaker.fromMultiModalData(prompt.getContent());
+                }
             }
 
             // Grounding Tool
+
             Tool groundingTool;
+
             if (project.getDataStoreId() != null) {
-                String dataStoreResource = String.format("projects/%s/locations/%s/collections/default_collection/dataStores/%s", 
-                        gcpProjectId, location, project.getDataStoreId());
-                
+
+                String dataStoreResource = String.format(
+                        "projects/%s/locations/%s/collections/default_collection/dataStores/%s",
+                        gcpProjectId, searchLocation, project.getDataStoreId());
+
                 Retrieval retrieval = Retrieval.newBuilder()
                         .setVertexAiSearch(VertexAISearch.newBuilder().setDatastore(dataStoreResource).build())
                         .build();
-                
+
                 groundingTool = Tool.newBuilder()
                         .setRetrieval(retrieval)
                         .build();
             } else {
                 // Fallback
-                 groundingTool = Tool.newBuilder()
-                    .setGoogleSearchRetrieval(GoogleSearchRetrieval.newBuilder().build())
-                    .build();
+                groundingTool = Tool.newBuilder()
+                        .setGoogleSearchRetrieval(GoogleSearchRetrieval.newBuilder().build())
+                        .build();
             }
-            
+
             // Initialize Model with Config
             GenerativeModel.Builder builder = new GenerativeModel.Builder()
-                .setModelName(modelName)
-                .setVertexAi(vertexAI)
-                .setTools(Collections.singletonList(groundingTool));
+                    .setModelName(modelName)
+                    .setVertexAi(vertexAI)
+                    .setTools(Collections.singletonList(groundingTool));
 
             if (systemInstruction != null) {
                 builder.setSystemInstruction(systemInstruction);
             }
 
             GenerativeModel model = builder.build();
-            
+
             // Generate Content with History
             // 1. Load history
             List<ChatMessage> historyMessages = chatSessionRepository.getMessages(sessionId);
             com.google.cloud.vertexai.generativeai.ChatSession chat = model.startChat();
-            
+
             // Replay history (excluding the one we just saved)
             List<Content> historyContent = new ArrayList<>();
             for (ChatMessage msg : historyMessages) {
-                if (msg.getId().equals(userMessage.getId())) continue;
+                if (msg.getId().equals(userMessage.getId()))
+                    continue;
 
                 if (msg.getRole() == MessageRole.USER) {
                     historyContent.add(ContentMaker.fromMultiModalData(msg.getContent()));
@@ -150,7 +185,7 @@ public class ChatService {
 
             GenerateContentResponse response = chat.sendMessage(userMessageText);
             String responseText = ResponseHandler.getText(response);
-            
+
             // Extract Citations
             List<Map<String, String>> citations = new ArrayList<>();
             if (response.getCandidatesCount() > 0) {
@@ -159,11 +194,11 @@ public class ChatService {
                     GroundingMetadata metadata = candidate.getGroundingMetadata();
                     for (GroundingChunk chunk : metadata.getGroundingChunksList()) {
                         if (chunk.hasRetrievedContext()) {
-                             GroundingChunk.RetrievedContext context = chunk.getRetrievedContext();
-                             Map<String, String> citation = new HashMap<>();
-                             citation.put("uri", context.getUri());
-                             citation.put("title", context.getTitle());
-                             citations.add(citation);
+                            GroundingChunk.RetrievedContext context = chunk.getRetrievedContext();
+                            Map<String, String> citation = new HashMap<>();
+                            citation.put("uri", context.getUri());
+                            citation.put("title", context.getTitle());
+                            citations.add(citation);
                         }
                     }
                 }
@@ -175,8 +210,7 @@ public class ChatService {
                     sessionId,
                     MessageRole.MODEL,
                     responseText,
-                    Instant.now().toString()
-            );
+                    Instant.now().toString());
             modelMessage.setCitations(citations);
             chatSessionRepository.saveMessage(modelMessage);
 

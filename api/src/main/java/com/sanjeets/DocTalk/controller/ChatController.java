@@ -3,17 +3,22 @@ package com.sanjeets.DocTalk.controller;
 import com.sanjeets.DocTalk.model.entity.ChatMessage;
 import com.sanjeets.DocTalk.model.entity.ChatSession;
 import com.sanjeets.DocTalk.service.ChatService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 import java.util.Map;
+import java.util.List;
+import com.sanjeets.DocTalk.model.entity.ChatMessage;
+import com.sanjeets.DocTalk.model.entity.ChatSession;
+import com.sanjeets.DocTalk.service.ChatService;
 
 @RestController
 @RequestMapping("/api/chat")
 @CrossOrigin(origins = "http://localhost:3000")
 public class ChatController {
 
+    private static final Logger log = LoggerFactory.getLogger(ChatController.class);
     private final ChatService chatService;
 
     public ChatController(ChatService chatService) {
@@ -49,8 +54,10 @@ public class ChatController {
         try {
             return ResponseEntity.ok(chatService.sendMessage(sessionId, content));
         } catch (IllegalArgumentException e) {
+            log.warn("Invalid request in sendMessage: {}", e.getMessage());
             return ResponseEntity.notFound().build();
         } catch (Exception e) {
+            log.error("Unexpected error in sendMessage", e);
             return ResponseEntity.internalServerError().build();
         }
     }

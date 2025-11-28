@@ -7,6 +7,8 @@ doctalk:
     project-id: ${GOOGLE_CLOUD_PROJECT:search-and-reco}
   gcs:
     bucket-name: ${GCS_BUCKET_NAME:doctalk-docs}
+  chat:
+    location: ${GCP_LOCATION:us-central1}
+    model: ${GEMINI_MODEL:gemini-2.5-pro}
   search:
     location: global
-    data-store-id: doctalk-knowledge-base
