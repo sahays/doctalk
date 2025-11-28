@@ -4,12 +4,12 @@ import { useEffect, useState, useRef } from 'react';
 import { useProjectStore } from '@/store/projectStore';
 import { 
     ChatSession, ChatMessage, 
-    createSession, getSessions, getMessages, sendMessage 
+    createSession, getSessions, getMessages, sendMessage, updateSession, deleteSession 
 } from '@/services/chatService';
 import { Prompt, getPrompts } from '@/services/promptService';
 import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/layout/PageHeader';
-import { Plus, MessageSquare, Send, User, Bot, Loader2, FileText, ChevronRight } from 'lucide-react';
+import { Plus, MessageSquare, Send, User, Bot, Loader2, FileText, ChevronRight, Trash2, Edit2, Check, X } from 'lucide-react';
 import { cn, timeAgo } from '@/lib/utils';
 import {
   Select,
@@ -32,6 +32,10 @@ export default function ChatPage() {
     const [sending, setSending] = useState(false);
     const [loadingHistory, setLoadingHistory] = useState(false);
     
+    // Edit State
+    const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
+    const [editTitle, setEditTitle] = useState('');
+
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     // Load Sessions & Prompts on Mount/Project Change
@@ -64,6 +68,38 @@ export default function ChatPage() {
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages]);
+
+    const handleRename = async (sessionId: string) => {
+        if (!editTitle.trim()) return;
+        try {
+            const updated = await updateSession(sessionId, editTitle);
+            setSessions(prev => prev.map(s => s.id === sessionId ? updated : s));
+            setEditingSessionId(null);
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    const handleDelete = async (e: React.MouseEvent, sessionId: string) => {
+        e.stopPropagation();
+        if (!confirm("Are you sure you want to delete this chat?")) return;
+        try {
+            await deleteSession(sessionId);
+            setSessions(prev => prev.filter(s => s.id !== sessionId));
+            if (activeSessionId === sessionId) {
+                setActiveSessionId(null);
+                setMessages([]);
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    const startEditing = (e: React.MouseEvent, session: ChatSession) => {
+        e.stopPropagation();
+        setEditingSessionId(session.id);
+        setEditTitle(session.title);
+    };
 
     const handleNewChat = () => {
         setActiveSessionId(null);
@@ -160,17 +196,58 @@ export default function ChatPage() {
                         <p className="text-center text-xs text-gray-400 mt-8">No chat history</p>
                     ) : (
                         sessions.map(session => (
-                            <button
+                            <div
                                 key={session.id}
-                                onClick={() => setActiveSessionId(session.id)}
+                                onClick={() => !editingSessionId && setActiveSessionId(session.id)}
                                 className={cn(
-                                    "w-full text-left p-3 rounded-lg text-sm transition-all hover:bg-purple-50 group border border-transparent",
-                                    activeSessionId === session.id ? "bg-purple-50 border-purple-100 font-medium text-purple-700" : "text-gray-600"
+                                    "w-full text-left p-3 rounded-lg text-sm transition-all hover:bg-purple-50 group border border-transparent relative flex items-center justify-between cursor-pointer",
+                                    activeSessionId === session.id ? "bg-purple-50 border-purple-100" : ""
                                 )}
                             >
-                                <div className="truncate pr-2">{session.title || "New Chat"}</div>
-                                <div className="text-[10px] text-gray-400 mt-1">{timeAgo(session.createdAt)}</div>
-                            </button>
+                                {editingSessionId === session.id ? (
+                                    <div className="flex items-center gap-1 w-full" onClick={(e) => e.stopPropagation()}>
+                                        <input 
+                                            value={editTitle}
+                                            onChange={(e) => setEditTitle(e.target.value)}
+                                            className="flex-1 min-w-0 bg-white border border-purple-200 rounded px-2 py-1 text-xs outline-none"
+                                            autoFocus
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter') handleRename(session.id);
+                                                if (e.key === 'Escape') setEditingSessionId(null);
+                                            }}
+                                        />
+                                        <button onClick={() => handleRename(session.id)} className="p-1 text-green-600 hover:bg-green-50 rounded"><Check className="h-3 w-3" /></button>
+                                        <button onClick={() => setEditingSessionId(null)} className="p-1 text-gray-400 hover:bg-gray-100 rounded"><X className="h-3 w-3" /></button>
+                                    </div>
+                                ) : (
+                                    <>
+                                        <div className="flex-1 min-w-0">
+                                            <div 
+                                                className={cn("truncate pr-2 font-medium", activeSessionId === session.id ? "text-purple-700" : "text-gray-600")}
+                                                onDoubleClick={(e) => startEditing(e, session)}
+                                                title="Double-click to rename"
+                                            >
+                                                {session.title || "New Chat"}
+                                            </div>
+                                            <div className="text-[10px] text-gray-400 mt-0.5">{timeAgo(session.createdAt)}</div>
+                                        </div>
+                                        <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+                                            <button 
+                                                onClick={(e) => startEditing(e, session)}
+                                                className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                                            >
+                                                <Edit2 className="h-3 w-3" />
+                                            </button>
+                                            <button 
+                                                onClick={(e) => handleDelete(e, session.id)}
+                                                className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                                            >
+                                                <Trash2 className="h-3 w-3" />
+                                            </button>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
                         ))
                     )}
                 </div>

@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 
 import com.google.cloud.firestore.DocumentSnapshot;
 import com.google.cloud.firestore.Firestore;
+import com.google.cloud.firestore.DocumentReference;
 import com.google.cloud.firestore.Query;
 import com.google.cloud.firestore.QuerySnapshot;
 import com.sanjeets.DocTalk.model.entity.ChatMessage;
@@ -90,6 +91,26 @@ public class ChatSessionRepository {
             return query.toObjects(ChatMessage.class);
         } catch (InterruptedException | ExecutionException e) {
             log.error("Failed to list messages", e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void deleteSession(String sessionId) {
+        try {
+            // 1. Delete messages sub-collection
+            Iterable<DocumentReference> messages = firestore.collection(SESSIONS_COLLECTION)
+                    .document(sessionId)
+                    .collection(MESSAGES_COLLECTION)
+                    .listDocuments();
+            
+            for (DocumentReference msg : messages) {
+                msg.delete();
+            }
+
+            // 2. Delete session document
+            firestore.collection(SESSIONS_COLLECTION).document(sessionId).delete().get();
+        } catch (InterruptedException | ExecutionException e) {
+            log.error("Failed to delete session", e);
             throw new RuntimeException(e);
         }
     }

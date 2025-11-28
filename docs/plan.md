@@ -74,7 +74,13 @@
         generation logic using Gemini API.
 
 - **Story 5.2: Chat UI (Sessions & Persona)**
-  - [ ] **Task:** Update `ChatPage` layout to include a "Recent Chats" sidebar (Session List).
-  - [ ] **Task:** Implement "New Chat" flow: User selects a System Instruction (Persona) to start a session.
-  - [ ] **Task:** Implement Chat Interface: Message history view, Input area, "Thinking" state, and Citation rendering.
-  - [ ] **Task:** Connect Frontend to Backend APIs for seamless chat experience.
+  - [x] **Task:** Update `ChatPage` layout to include a "Recent Chats" sidebar (Session List).
+  - [x] **Task:** Implement "New Chat" flow: User selects a System Instruction (Persona) to start a session.
+  - [x] **Task:** Implement Chat Interface: Message history view, Input area, "Thinking" state, and Citation rendering.
+  - [x] **Task:** Connect Frontend to Backend APIs for seamless chat experience.
+
+- **Story 5.3: Chat Session Management**
+  - [x] **Task:** Backend: Add Rename (Update) and Delete Session endpoints.
+  - [x] **Task:** Backend: Change default session title to Date/Time string.
+  - [x] **Task:** Frontend: Implement Double-click to Rename session.
+  - [x] **Task:** Frontend: Implement Delete Session action.

@@ -64,19 +64,31 @@ public class ChatService {
         this.promptRepository = promptRepository;
     }
 
-    public ChatSession createSession(String projectId, String promptId) {
-        // Fetch prompt name to set as initial title (or use "New Chat")
-        String title = "New Chat";
-        if (promptId != null) {
-            // Optional: Fetch prompt title
-        }
+        public ChatSession createSession(String projectId, String promptId) {
 
-        ChatSession session = new ChatSession(
-                UUID.randomUUID().toString(),
-                projectId,
-                promptId,
-                title,
-                Instant.now().toString());
+            // Use Date/Time as initial title
+
+            String title = java.time.format.DateTimeFormatter.ofPattern("MMM dd, HH:mm")
+
+                    .withZone(java.time.ZoneId.systemDefault())
+
+                    .format(Instant.now());
+
+    
+
+            ChatSession session = new ChatSession(
+
+                    UUID.randomUUID().toString(),
+
+                    projectId,
+
+                    promptId,
+
+                    title,
+
+                    Instant.now().toString()
+
+            );
         chatSessionRepository.saveSession(session);
         return session;
     }
@@ -89,6 +101,18 @@ public class ChatService {
 
     public List<ChatMessage> getMessages(String sessionId) {
         return chatSessionRepository.getMessages(sessionId);
+    }
+
+    public ChatSession updateSession(String sessionId, String newTitle) {
+        ChatSession session = chatSessionRepository.getSession(sessionId);
+        if (session == null) throw new IllegalArgumentException("Session not found");
+        session.setTitle(newTitle);
+        chatSessionRepository.saveSession(session);
+        return session;
+    }
+
+    public void deleteSession(String sessionId) {
+        chatSessionRepository.deleteSession(sessionId);
     }
 
     public ChatMessage sendMessage(String sessionId, String userMessageText) {

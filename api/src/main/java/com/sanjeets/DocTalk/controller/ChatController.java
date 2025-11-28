@@ -45,6 +45,23 @@ public class ChatController {
         return ResponseEntity.ok(chatService.getMessages(sessionId));
     }
 
+    @PutMapping("/sessions/{sessionId}")
+    public ResponseEntity<ChatSession> updateSession(@PathVariable String sessionId, @RequestBody Map<String, String> request) {
+        String title = request.get("title");
+        if (title == null) return ResponseEntity.badRequest().build();
+        try {
+            return ResponseEntity.ok(chatService.updateSession(sessionId, title));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @DeleteMapping("/sessions/{sessionId}")
+    public ResponseEntity<Void> deleteSession(@PathVariable String sessionId) {
+        chatService.deleteSession(sessionId);
+        return ResponseEntity.noContent().build();
+    }
+
     @PostMapping("/sessions/{sessionId}/messages")
     public ResponseEntity<ChatMessage> sendMessage(@PathVariable String sessionId, @RequestBody Map<String, String> request) {
         String content = request.get("content");
