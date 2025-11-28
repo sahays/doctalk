@@ -23,7 +23,7 @@
   - [x] **Task:** Update `GET /api/documents/upload-url` to take `projectId` -> path: `projectId/filename`.
 
   - [x] **Task:** Update `GET /api/documents` to take `projectId` and filter GCS list by prefix.
-  
+
   - [x] **Task:** Implement `DELETE /api/documents` to delete file from GCS.
 
 - **Story 2.3: Project UI**
@@ -33,7 +33,7 @@
   - [x] **Task:** Update Sidebar to show active Project context.
 
   - [x] **Task:** Update Document Upload/List to use active `projectId`.
-  
+
   - [x] **Task:** Add "Delete" action to Document List.
 
 ## Epic 3: Search Infrastructure Automation (Per Project)
@@ -56,16 +56,25 @@
 **Goal:** Allow users to define global system instructions (personas) that guide the AI's behavior.
 
 - **Story 4.1: Prompt CRUD**
-  - [ ] **Task:** Create `Prompt` entity (id, name, content, isDefault) and Firestore repository.
-  - [ ] **Task:** Implement API and UI for managing prompts.
-  - [ ] **Task:** Implement logic to retrieve the active/default prompt for use as System Instruction in Chat.
+  - [x] **Task:** Create `Prompt` entity and Firestore repository.
+  - [x] **Task:** Implement API (`PromptController`, `Service`) for CRUD operations.
+  - [x] **Task:** Implement Frontend UI (`/prompts`) for managing system instructions.
+  - [x] **Task:** Update Sidebar to include "System Instructions".
 
-## Epic 5: RAG Chat Experience (Scoped)
+## Epic 5: RAG Chat Experience (Scoped & Persistent)
 
-**Goal:** Chat within a specific project context.
+**Goal:** Chat within a specific project context, with persistent sessions and selectable personas.
 
-- **Story 5.1: Scoped RAG**
-  - [ ] **Task:** Update `SearchService` to look up the Project's specific `engineId`.
-  - [ ] **Task:** Implement Chat API to use that Engine.
-- **Story 5.2: Chat UI**
-  - [ ] **Task:** Chat Interface scoped to project.
+- **Story 5.1: Chat Backend (Sessions & Logic)**
+
+  - [x] **Task:** Create `ChatSession` and `ChatMessage` entities and repositories.
+  - [x] **Task:** Implement `ChatService` to handle session creation, message persistence, and history retrieval.
+  - [x] **Task:** Implement `ChatController` endpoints (Create Session, List Sessions, Get Messages, Send Message).
+  - [x] **Task:** Integrate `SearchInfraService` (Data Store ID) and `PromptService` (System Instruction) into the Chat
+        generation logic using Gemini API.
+
+- **Story 5.2: Chat UI (Sessions & Persona)**
+  - [ ] **Task:** Update `ChatPage` layout to include a "Recent Chats" sidebar (Session List).
+  - [ ] **Task:** Implement "New Chat" flow: User selects a System Instruction (Persona) to start a session.
+  - [ ] **Task:** Implement Chat Interface: Message history view, Input area, "Thinking" state, and Citation rendering.
+  - [ ] **Task:** Connect Frontend to Backend APIs for seamless chat experience.

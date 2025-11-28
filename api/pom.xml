@@ -59,6 +59,10 @@
 			<artifactId>google-cloud-discoveryengine</artifactId>
 		</dependency>
 		<dependency>
+			<groupId>com.google.cloud</groupId>
+			<artifactId>google-cloud-vertexai</artifactId>
+		</dependency>
+		<dependency>
 			<groupId>com.google.genai</groupId>
 			<artifactId>google-genai</artifactId>
 			<version>0.4.0</version>

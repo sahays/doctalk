@@ -42,6 +42,23 @@ public class PromptRepository {
         }
     }
 
+    public Prompt findById(String id) {
+        try {
+            DocumentSnapshot doc = firestore.collection(COLLECTION_NAME).document(id).get().get();
+            if (doc.exists()) {
+                Prompt prompt = doc.toObject(Prompt.class);
+                if (prompt != null) {
+                    prompt.setId(doc.getId());
+                    return prompt;
+                }
+            }
+            return null;
+        } catch (InterruptedException | ExecutionException e) {
+            log.error("Failed to find prompt", e);
+            throw new RuntimeException("Database error", e);
+        }
+    }
+
     public List<Prompt> findAll() {
         try {
             ApiFuture<QuerySnapshot> future = firestore.collection(COLLECTION_NAME).get();
