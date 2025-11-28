@@ -38,4 +38,12 @@ public class DocumentController {
             "fileName", fileName
         ));
     }
+
+    @DeleteMapping
+    public ResponseEntity<Void> deleteDocument(
+            @RequestParam("projectId") String projectId,
+            @RequestParam("fileName") String fileName) {
+        documentService.deleteDocument(projectId, fileName);
+        return ResponseEntity.noContent().build();
+    }
 }

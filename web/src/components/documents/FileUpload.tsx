@@ -35,7 +35,17 @@ export function FileUpload({ onUploadComplete }: FileUploadProps) {
     ]);
   }, []);
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop });
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: {
+      'application/pdf': ['.pdf'],
+      'text/html': ['.html', '.htm'],
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation': ['.pptx'],
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
+      'text/plain': ['.txt']
+    }
+  });
 
   const removeFile = (name: string) => {
     setFiles((prev) => prev.filter((f) => f.file.name !== name));
@@ -106,7 +116,7 @@ export function FileUpload({ onUploadComplete }: FileUploadProps) {
           Drag & drop files here, or click to select files
         </p>
         <p className="mt-1 text-xs text-gray-500">
-          PDF, DOCX, TXT, HTML (Max 50MB)
+          PDF, HTML, DOCX, PPTX, XLSX, TXT (Max 50MB)
         </p>
       </div>
 

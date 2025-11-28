@@ -20,10 +20,8 @@ export default function RootLayout({
         className={`${GeistSans.variable} ${GeistMono.variable} font-sans antialiased flex flex-col md:flex-row min-h-screen bg-slate-50/30`}
       >
         <Sidebar className="hidden md:block shrink-0" />
-        <main className="flex-1 p-4 md:p-8 overflow-x-hidden w-full">
-          <div className="mx-auto w-full max-w-xl md:max-w-4xl lg:max-w-6xl transition-all">
+        <main className="flex-1 overflow-x-hidden w-full">
             {children}
-          </div>
         </main>
       </body>
     </html>

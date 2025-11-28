@@ -59,3 +59,12 @@ export async function uploadFile(projectId: string, file: File, onProgress?: (pr
     // 2. Upload to GCS
     await uploadFileToGcs(url, file, onProgress);
 }
+
+export async function deleteDocument(projectId: string, fileName: string): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/documents?projectId=${projectId}&fileName=${encodeURIComponent(fileName)}`, {
+        method: 'DELETE',
+    });
+    if (!response.ok) {
+        throw new Error('Failed to delete document');
+    }
+}

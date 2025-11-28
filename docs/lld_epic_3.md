@@ -1,61 +1,50 @@
-# Low-Level Design: Epic 3 - Search Infrastructure Automation (Refined)
+# Low-Level Design: Epic 3 - Search Infrastructure Automation (Refined + Indexing)
 
 ## 1. Overview
 
-Allow users to manually trigger the provisioning of Vertex AI Search infrastructure for a specific Project. This
-decouples project creation from resource provisioning, giving users control over when to initialize the AI capabilities.
+Allow users to manually trigger provisioning and **Indexing** of documents. Provide visibility into how many documents
+are currently indexed in the Vertex AI Search Data Store.
 
 ## 2. API Design
 
 ### 2.1. Provision Endpoint
 
-- **Method:** `POST /api/projects/{projectId}/provision`
-- **Controller:** `ProjectController`
-- **Behavior:**
-  1.  Validate `projectId`.
-  2.  Check current status (Allow if `CREATED` or `FAILED`).
-  3.  Call `SearchInfraService.provisionProject(projectId)` asynchronously.
-  4.  Return `202 Accepted`.
+- **POST /api/projects/{projectId}/provision**
+  - Creates Data Store & Engine.
+  - Triggers initial Import.
+
+### 2.2. Sync Endpoint
+
+- **POST /api/projects/{projectId}/sync**
+  - **Triggers:** `SearchInfraService.importDocuments(projectId)`.
+  - **Use Case:** User uploaded new files and wants to update the index immediately.
+
+### 2.3. Status Endpoint
+
+- **GET /api/projects/{projectId}/indexing-status**
+  - **Response:** `{ "indexedCount": 12, "status": "READY" }`
+  - **Logic:** Calls `SearchInfraService.getDocumentCount()`.
 
 ## 3. Service Layer (`SearchInfraService`)
 
-### 3.1. `provisionProject(String projectId)`
+### 3.1. `importDocuments(String projectId)`
 
-- **Annotation:** `@Async`
-- **Logic:**
-  1.  **Load Project:** Fetch from Firestore.
-  2.  **State Transition:** Set `status = PROVISIONING`. Save.
-  3.  **Resource Creation:**
-      - **Data Store:**
-        - ID: `ds-{sanitized_uuid}`
-        - Config: Generic Unstructured.
-        - **Source:** _Note: Data Source linking (GCS) usually happens via Import APIs or separate linking, not strictly
-          at creation time for generic stores, but we will define the `content_config` and then trigger an import._
-      - **Engine:**
-        - ID: `app-{sanitized_uuid}`
-        - Link: `ds-{sanitized_uuid}`
-  4.  **Initial Import:**
-      - Trigger `importDocuments` for path `gs://{bucket}/{projectId}/**`.
-  5.  **State Transition:**
-      - Success: Set `status = READY`. Save `dataStoreId`, `engineId`.
-      - Failure: Set `status = FAILED`. Log error.
+- **Client:** `DocumentServiceClient`.
+- **Source:** `gs://{bucket}/{projectId}/*`.
+- **Mode:** `INCREMENTAL`.
+- **Async:** Yes, returns OperationFuture but method returns void (fire-and-forget for MVP).
+
+### 3.2. `getDocumentCount(String projectId)`
+
+- **Client:** `DocumentServiceClient`.
+- **Logic:** List documents in `projects/.../branches/default_branch` and count them.
+- **Optimization:** For MVP, simple iteration is fine.
 
 ## 4. UI/UX (Frontend)
 
-### 4.1. Project Card Actions
+### 4.1. Project Card Updates
 
-- **State: CREATED / FAILED**
-  - **Action:** "Setup Search" Button.
-  - **Visual:** Primary Button (e.g., Orange/Pink gradient).
-- **State: PROVISIONING**
-  - **Action:** Disabled Button / Spinner.
-  - **Visual:** "Setting up infrastructure..." (Polled status).
-- **State: READY**
-  - **Action:** "Chat" / "Documents".
-  - **Visual:** Green "Active" indicator.
-
-## 5. Technical Components
-
-- **AsyncConfig:** Enable `@Async` in Spring Boot.
-- **GCS Integration:** Ensure the Service Account has permissions to create Data Stores and Engines (Vertex AI Admin
-  role).
+- **Stats:** Show "Indexed Documents: [Count]" badge.
+- **Actions:**
+  - If `READY`: Show "Sync" button (Refresh icon).
+  - Poll `indexing-status` periodically if on dashboard.

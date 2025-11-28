@@ -65,4 +65,12 @@ public class DocumentService {
                         .build())
                 .toList();
     }
+
+    public void deleteDocument(String projectId, String fileName) {
+        String objectName = projectId + "/" + fileName;
+        boolean deleted = storage.delete(bucketName, objectName);
+        if (!deleted) {
+            throw new RuntimeException("Failed to delete document: " + objectName + " (it might not exist)");
+        }
+    }
 }

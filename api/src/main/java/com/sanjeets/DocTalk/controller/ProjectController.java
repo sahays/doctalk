@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/projects")
@@ -37,5 +38,31 @@ public class ProjectController {
     public ResponseEntity<Void> provisionProject(@PathVariable String projectId) {
         searchInfraService.provisionProject(projectId);
         return ResponseEntity.accepted().build();
+    }
+
+    @PostMapping("/{projectId}/sync")
+    public ResponseEntity<Map<String, String>> syncProject(@PathVariable String projectId) {
+        try {
+            String opName = projectService.triggerSync(projectId);
+            return ResponseEntity.accepted().body(Map.of("operation", opName, "status", "RUNNING"));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(409).body(Map.of("error", e.getMessage(), "status", "RUNNING"));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @GetMapping("/operations/{operationName}")
+    public ResponseEntity<Map<String, String>> checkOperation(@PathVariable String operationName) {
+        // operationName usually contains slashes, need to handle decoding if passed in path
+        // For simplicity, we might need to pass it as query param or encode it.
+        // Spring handles encoded paths well usually.
+        SearchInfraService.ImportStatusResult result = searchInfraService.getImportOperationStatus(operationName);
+        return ResponseEntity.ok(Map.of("status", result.status));
+    }
+
+    @GetMapping("/{projectId}/indexing-status")
+    public ResponseEntity<Long> getIndexingStatus(@PathVariable String projectId) {
+        return ResponseEntity.ok(searchInfraService.getDocumentCount(projectId));
     }
 }

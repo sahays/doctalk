@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { DocumentSummary, getDocuments } from '@/services/documentService';
-import { FileText, RefreshCw } from 'lucide-react';
+import { DocumentSummary, getDocuments, deleteDocument } from '@/services/documentService';
+import { FileText, RefreshCw, Trash2, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useProjectStore } from '@/store/projectStore';
 
@@ -10,6 +10,7 @@ export function DocumentList({ refreshTrigger }: { refreshTrigger: number }) {
     const { activeProject } = useProjectStore();
     const [documents, setDocuments] = useState<DocumentSummary[]>([]);
     const [loading, setLoading] = useState(false);
+    const [deleting, setDeleting] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
 
     const fetchDocuments = async () => {
@@ -25,6 +26,23 @@ export function DocumentList({ refreshTrigger }: { refreshTrigger: number }) {
             console.error(err);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleDelete = async (fileName: string) => {
+        if (!activeProject || deleting) return;
+        
+        if (!confirm(`Are you sure you want to delete "${fileName}"?`)) return;
+
+        setDeleting(fileName);
+        try {
+            await deleteDocument(activeProject.id, fileName);
+            setDocuments(docs => docs.filter(d => d.name !== fileName));
+        } catch (err) {
+            console.error("Failed to delete", err);
+            alert("Failed to delete document");
+        } finally {
+            setDeleting(null);
         }
     };
 
@@ -74,7 +92,7 @@ export function DocumentList({ refreshTrigger }: { refreshTrigger: number }) {
                 ) : (
                     documents.map((doc) => (
                         <div key={doc.name} className="flex items-center justify-between p-4 bg-white border rounded-lg shadow-sm hover:shadow-md transition-shadow">
-                            <div className="flex items-center gap-4 overflow-hidden">
+                            <div className="flex items-center gap-4 overflow-hidden flex-1">
                                 <div className="p-2 bg-blue-50 rounded-lg shrink-0">
                                     <FileText className="h-6 w-6 text-blue-500" />
                                 </div>
@@ -87,8 +105,19 @@ export function DocumentList({ refreshTrigger }: { refreshTrigger: number }) {
                                     </p>
                                 </div>
                             </div>
-                            <div className="text-xs text-gray-400 whitespace-nowrap ml-4">
-                                {new Date(doc.timeCreated).toLocaleDateString()}
+                            <div className="flex items-center gap-4 ml-4">
+                                <div className="text-xs text-gray-400 whitespace-nowrap hidden sm:block">
+                                    {new Date(doc.timeCreated).toLocaleDateString()}
+                                </div>
+                                <Button 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    className="h-8 w-8 text-gray-400 hover:text-red-600 hover:bg-red-50"
+                                    onClick={() => handleDelete(doc.name)}
+                                    disabled={deleting === doc.name}
+                                >
+                                    {deleting === doc.name ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                                </Button>
                             </div>
                         </div>
                     ))

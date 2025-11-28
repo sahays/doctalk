@@ -8,8 +8,6 @@
 
 **Goal:** Allow users to manage Projects and upload documents to specific project folders.
 
-
-
 - **Story 2.1: Project Management (Backend)**
 
   - [x] **Task:** Create `Project` entity (id, name, status, gcsPrefix, dataStoreId, engineId).
@@ -39,12 +37,14 @@
 **Goal:** Automate Vertex AI Search provisioning for each new project.
 
 - **Story 3.1: Async Provisioning**
-  - [ ] **Task:** Update `SearchInfraService` to accept `projectId`.
-  - [ ] **Task:** Implement `provisionProjectResources(projectId)`:
-    1. Create Data Store `doctalk-<projectId>` (GCS source `gs://bucket/<projectId>/`).
-    2. Create Engine `doctalk-app-<projectId>`.
-    3. Update Project status in Firestore.
-  - [ ] **Task:** Trigger this service asynchronously upon `POST /api/projects`.
+  - [x] **Task:** Update `SearchInfraService` to accept `projectId`.
+  - [x] **Task:** Implement `provisionProjectResources(projectId)`.
+  - [x] **Task:** Trigger this service asynchronously upon `POST /api/projects` (or manual provision).
+- **Story 3.2: Content Indexing & Status**
+  - [x] **Task:** Implement `importDocuments(projectId)` in `SearchInfraService` (Real GCS Sync).
+  - [x] **Task:** Implement `getDocumentCount(projectId)` to check indexing status.
+  - [x] **Task:** Expose `POST /api/projects/{id}/sync` and `GET /api/projects/{id}/status`.
+  - [x] **Task:** Update Project UI to show "Indexed Documents: X" and "Sync" button.
 
 ## Epic 4: Prompt Management
 

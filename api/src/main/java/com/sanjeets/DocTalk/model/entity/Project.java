@@ -8,6 +8,9 @@ public class Project {
     private String dataStoreId;
     private String engineId;
     private String createdAt;
+    private String latestImportOperation;
+    private String importStatus; // IDLE, RUNNING, COMPLETED, FAILED
+    private String lastIndexedAt;
 
     public Project() {}
 
@@ -19,6 +22,7 @@ public class Project {
         this.dataStoreId = dataStoreId;
         this.engineId = engineId;
         this.createdAt = createdAt;
+        this.importStatus = "IDLE";
     }
 
     // Getters and Setters
@@ -42,4 +46,13 @@ public class Project {
 
     public String getCreatedAt() { return createdAt; }
     public void setCreatedAt(String createdAt) { this.createdAt = createdAt; }
+
+    public String getLatestImportOperation() { return latestImportOperation; }
+    public void setLatestImportOperation(String latestImportOperation) { this.latestImportOperation = latestImportOperation; }
+
+    public String getImportStatus() { return importStatus; }
+    public void setImportStatus(String importStatus) { this.importStatus = importStatus; }
+
+    public String getLastIndexedAt() { return lastIndexedAt; }
+    public void setLastIndexedAt(String lastIndexedAt) { this.lastIndexedAt = lastIndexedAt; }
 }
