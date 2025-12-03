@@ -73,4 +73,34 @@ public class DocumentService {
             throw new RuntimeException("Failed to delete document: " + objectName + " (it might not exist)");
         }
     }
+
+    public String generateReadSignedUrl(String gsUri) {
+        if (gsUri == null || !gsUri.startsWith("gs://")) {
+            return gsUri;
+        }
+
+        try {
+            // gs://bucket-name/object-name
+            String path = gsUri.substring(5);
+            int firstSlash = path.indexOf('/');
+            if (firstSlash == -1) return gsUri;
+
+            String bucket = path.substring(0, firstSlash);
+            String objectName = path.substring(firstSlash + 1);
+
+            BlobInfo blobInfo = BlobInfo.newBuilder(bucket, objectName).build();
+            
+            URL url = storage.signUrl(
+                    blobInfo,
+                    60, // Valid for 1 hour
+                    TimeUnit.MINUTES,
+                    Storage.SignUrlOption.httpMethod(HttpMethod.GET),
+                    Storage.SignUrlOption.withV4Signature()
+            );
+            return url.toString();
+        } catch (Exception e) {
+            // Fallback to original URI if signing fails
+            return gsUri;
+        }
+    }
 }

@@ -65,3 +65,61 @@ export async function deleteSession(sessionId: string): Promise<void> {
     });
     if (!response.ok) throw new Error('Failed to delete session');
 }
+
+export async function streamMessage(
+    sessionId: string, 
+    content: string, 
+    onChunk: (chunk: string) => void,
+    onCitations?: (citations: { uri: string; title: string }[]) => void,
+    onStatus?: (status: string) => void
+): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/chat/sessions/${sessionId}/stream`, {
+        method: 'POST',
+        headers: { 
+            'Content-Type': 'application/json',
+            'Accept': 'text/event-stream'
+        },
+        body: JSON.stringify({ content }),
+    });
+
+    if (!response.ok) throw new Error('Failed to start stream');
+    if (!response.body) throw new Error('ReadableStream not supported');
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        
+        const chunk = decoder.decode(value, { stream: true });
+        buffer += chunk;
+        const lines = buffer.split('\n');
+        
+        // The last line is potentially incomplete, keep it in buffer
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+            if (line.startsWith('data:')) {
+                const data = line.slice(5).trim();
+                if (!data) continue;
+                
+                try {
+                    const parsed = JSON.parse(data);
+                    if (parsed.status && onStatus) {
+                        onStatus(parsed.status);
+                    }
+                    if (parsed.text) {
+                        onChunk(parsed.text);
+                    }
+                    if (parsed.citations && onCitations) {
+                        onCitations(parsed.citations);
+                    }
+                } catch (e) {
+                    console.warn("Failed to parse SSE JSON chunk", data);
+                }
+            }
+        }
+    }
+}

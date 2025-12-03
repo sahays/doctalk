@@ -4,12 +4,12 @@ import { useEffect, useState, useRef } from 'react';
 import { useProjectStore } from '@/store/projectStore';
 import { 
     ChatSession, ChatMessage, 
-    createSession, getSessions, getMessages, sendMessage, updateSession, deleteSession 
+    createSession, getSessions, getMessages, updateSession, deleteSession, streamMessage 
 } from '@/services/chatService';
 import { Prompt, getPrompts } from '@/services/promptService';
 import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/layout/PageHeader';
-import { Plus, MessageSquare, Send, User, Bot, Loader2, FileText, ChevronRight, Trash2, Edit2, Check, X } from 'lucide-react';
+import { Plus, MessageSquare, Send, User, Bot, Loader2, FileText, ChevronRight, Trash2, Edit2, Check, X, Copy, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { cn, timeAgo } from '@/lib/utils';
 import {
   Select,
@@ -17,7 +17,9 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
+} from "@/components/ui/select";
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 export default function ChatPage() {
     const { activeProject } = useProjectStore();
@@ -30,6 +32,7 @@ export default function ChatPage() {
     
     const [input, setInput] = useState('');
     const [sending, setSending] = useState(false);
+    const [streamStatus, setStreamStatus] = useState<string | null>(null);
     const [loadingHistory, setLoadingHistory] = useState(false);
     
     // Edit State
@@ -40,7 +43,7 @@ export default function ChatPage() {
 
     // Load Sessions & Prompts on Mount/Project Change
     useEffect(() => {
-        if (!activeProject) return;
+        if (!activeProject) return; 
         
         getSessions(activeProject.id).then(setSessions).catch(console.error);
         getPrompts().then(setPrompts).catch(console.error);
@@ -107,11 +110,16 @@ export default function ChatPage() {
         setInput('');
     };
 
+    const copyToClipboard = (text: string) => {
+        navigator.clipboard.writeText(text);
+    };
+
     const handleSend = async () => {
         if (!input.trim() || !activeProject) return;
 
         const userText = input.trim();
         setInput('');
+        setStreamStatus(null);
         
         // Optimistic UI: Add User Message immediately
         const tempUserMsg: ChatMessage = {
@@ -138,27 +146,57 @@ export default function ChatPage() {
                 sessionId = newSession.id;
             }
 
-            // Send Message
-            const responseMsg = await sendMessage(sessionId!, userText);
+            // Stream Message
+            let aiMessageCreated = false;
+            const aiMsgId = 'ai-' + Date.now();
+
+            await streamMessage(
+                sessionId!,
+                userText,
+                (chunk) => {
+                    if (!aiMessageCreated) {
+                        setSending(false); 
+                        setStreamStatus(null);
+                        setMessages(prev => [
+                            ...prev, 
+                            { 
+                                id: aiMsgId, 
+                                sessionId: sessionId!,
+                                role: 'MODEL',
+                                content: chunk,
+                                createdAt: new Date().toISOString() 
+                            }
+                        ]);
+                        aiMessageCreated = true;
+                    } else {
+                        setMessages(prev => prev.map(msg => 
+                            msg.id === aiMsgId 
+                                ? { ...msg, content: msg.content + chunk }
+                                : msg
+                        ));
+                    }
+                },
+                (citations) => {
+                    setMessages(prev => prev.map(msg => 
+                        msg.id === aiMsgId 
+                            ? { ...msg, citations: citations }
+                            : msg
+                    ));
+                },
+                (status) => {
+                    setStreamStatus(status);
+                }
+            );
             
-            // Replace temp message with real one (though ID doesn't matter much for display)
-            // And add AI response
-            setMessages(prev => [
-                ...prev.filter(m => m.id !== tempUserMsg.id), // Remove temp
-                { ...tempUserMsg, id: 'real-' + Date.now(), sessionId: sessionId! }, // Add saved user msg (conceptually)
-                responseMsg // Add AI response
-            ]);
-            
-            // Re-fetch messages to ensure everything is synced/ordered correctly from server
             const freshMessages = await getMessages(sessionId!);
             setMessages(freshMessages);
 
         } catch (error) {
             console.error(error);
-            // Revert optimistic update or show error
             alert("Failed to send message.");
         } finally {
             setSending(false);
+            setStreamStatus(null);
         }
     };
 
@@ -299,7 +337,7 @@ export default function ChatPage() {
                             <div 
                                 key={msg.id} 
                                 className={cn(
-                                    "flex gap-4 max-w-3xl mx-auto",
+                                    "flex gap-4 max-w-3xl mx-auto group",
                                     msg.role === 'USER' ? "flex-row-reverse" : "flex-row"
                                 )}
                             >
@@ -315,17 +353,58 @@ export default function ChatPage() {
                                     msg.role === 'USER' ? "items-end" : "items-start"
                                 )}>
                                     <div className={cn(
-                                        "p-4 rounded-2xl shadow-sm text-sm leading-relaxed whitespace-pre-wrap",
+                                        "p-4 rounded-2xl shadow-sm text-sm leading-relaxed overflow-hidden",
                                         msg.role === 'USER' 
                                             ? "bg-purple-600 text-white rounded-tr-none" 
                                             : "bg-white border border-gray-100 text-gray-800 rounded-tl-none"
                                     )}>
-                                        {msg.content}
+                                        {msg.role === 'USER' ? (
+                                            <div className="whitespace-pre-wrap">{msg.content}</div>
+                                        ) : (
+                                            <ReactMarkdown 
+                                                remarkPlugins={[remarkGfm]}
+                                                components={{
+                                                    // Custom link renderer for citations/footnotes
+                                                    a: ({node, ...props}) => (
+                                                        <a {...props} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline" />
+                                                    ),
+                                                    // Add styling for code blocks
+                                                    code: ({node, className, children, ...props}) => {
+                                                        const match = /language-(\w+)/.exec(className || '');
+                                                        const isInline = !match && !String(children).includes('\n');
+                                                        
+                                                        if (!isInline) {
+                                                            return (
+                                                                <div className="relative my-2">
+                                                                    <div className="bg-gray-800 text-gray-100 p-3 rounded-md overflow-x-auto text-xs">
+                                                                        <code className={className} {...props}>
+                                                                            {children}
+                                                                        </code>
+                                                                    </div>
+                                                                    <button 
+                                                                        onClick={() => copyToClipboard(String(children))}
+                                                                        className="absolute top-2 right-2 p-1 text-gray-400 hover:text-white bg-gray-700/50 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                                                                    >
+                                                                        <Copy className="h-3 w-3" />
+                                                                    </button>
+                                                                </div>
+                                                            );
+                                                        }
+                                                        
+                                                        return (
+                                                            <code className="bg-gray-100 px-1 py-0.5 rounded text-red-500 font-mono text-xs" {...props}>
+                                                                {children}
+                                                            </code>
+                                                        );
+                                                    }
+                                                }}
+                                            >{msg.content}</ReactMarkdown>
+                                        )}
                                     </div>
                                     
-                                    {/* Citations */}
+                                    {/* Citations Badges */}
                                     {msg.citations && msg.citations.length > 0 && (
-                                        <div className="flex flex-wrap gap-2 mt-2">
+                                        <div className="flex flex-wrap gap-2 mt-2 px-1">
                                             {msg.citations.map((cite, idx) => (
                                                 <a 
                                                     key={idx} 
@@ -340,11 +419,31 @@ export default function ChatPage() {
                                             ))}
                                         </div>
                                     )}
+                                    
+                                    {/* Action Footer (Copy, Feedback) */}
+                                    {msg.role === 'MODEL' && (
+                                        <div className="flex items-center gap-2 mt-1 px-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <button 
+                                                onClick={() => copyToClipboard(msg.content)}
+                                                className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
+                                                title="Copy full response"
+                                            >
+                                                <Copy className="h-3 w-3" />
+                                            </button>
+                                            <div className="h-3 w-px bg-gray-200 mx-1"></div>
+                                            <button className="p-1 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded transition-colors">
+                                                <ThumbsUp className="h-3 w-3" />
+                                            </button>
+                                            <button className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors">
+                                                <ThumbsDown className="h-3 w-3" />
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         ))
                     )}
-                    {sending && (
+                    {sending && !streamStatus && (
                         <div className="flex gap-4 max-w-3xl mx-auto animate-pulse">
                             <div className="w-8 h-8 rounded-full bg-teal-600 flex items-center justify-center shrink-0">
                                 <Bot className="h-4 w-4 text-white" />
@@ -353,6 +452,20 @@ export default function ChatPage() {
                                 <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
                                 <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
                                 <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce"></span>
+                            </div>
+                        </div>
+                    )}
+                    {/* Status Indicator */}
+                    {streamStatus && (
+                         <div className="flex gap-4 max-w-3xl mx-auto">
+                            <div className="w-8 h-8 rounded-full bg-teal-600 flex items-center justify-center shrink-0">
+                                <Bot className="h-4 w-4 text-white" />
+                            </div>
+                            <div className="flex items-center p-4">
+                                <span className="text-xs text-gray-500 font-medium animate-pulse uppercase tracking-wide flex items-center gap-2">
+                                    <Loader2 className="h-3 w-3 animate-spin" />
+                                    {streamStatus}
+                                </span>
                             </div>
                         </div>
                     )}

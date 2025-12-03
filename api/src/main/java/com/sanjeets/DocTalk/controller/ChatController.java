@@ -5,13 +5,14 @@ import com.sanjeets.DocTalk.model.entity.ChatSession;
 import com.sanjeets.DocTalk.service.ChatService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Flux;
+
 import java.util.Map;
 import java.util.List;
-import com.sanjeets.DocTalk.model.entity.ChatMessage;
-import com.sanjeets.DocTalk.model.entity.ChatSession;
-import com.sanjeets.DocTalk.service.ChatService;
 
 @RestController
 @RequestMapping("/api/chat")
@@ -77,5 +78,15 @@ public class ChatController {
             log.error("Unexpected error in sendMessage", e);
             return ResponseEntity.internalServerError().build();
         }
+    }
+
+    @PostMapping(value = "/sessions/{sessionId}/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public Flux<ServerSentEvent<String>> streamMessage(@PathVariable String sessionId, @RequestBody Map<String, String> request) {
+        String content = request.get("content");
+        if (content == null) {
+            return Flux.error(new IllegalArgumentException("Content is required"));
+        }
+        return chatService.streamMessage(sessionId, content)
+                .map(data -> ServerSentEvent.builder(data).build());
     }
 }

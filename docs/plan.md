@@ -74,6 +74,7 @@
         generation logic using Gemini API.
 
 - **Story 5.2: Chat UI (Sessions & Persona)**
+
   - [x] **Task:** Update `ChatPage` layout to include a "Recent Chats" sidebar (Session List).
   - [x] **Task:** Implement "New Chat" flow: User selects a System Instruction (Persona) to start a session.
   - [x] **Task:** Implement Chat Interface: Message history view, Input area, "Thinking" state, and Citation rendering.
@@ -87,24 +88,47 @@
 
 ## Epic 6: Chat Improvements
 
+
+
 **Goal:** Enhance the chat experience with real-time streaming, rich text formatting, and usability features.
 
-- **Story 6.1: Streaming Chat Response**
-  - [ ] **Task:** Backend: Modify `ChatController` to return `Flux<String>` or `SseEmitter` for streaming.
-  - [ ] **Task:** Backend: Update `ChatService` to use Gemini's streaming generation API.
-  - [ ] **Task:** Frontend: Update `chatService.ts` to handle streaming response.
-  - [ ] **Task:** Frontend: Update Chat UI to render streamed tokens in real-time.
 
-- **Story 6.2: Markdown & Copy**
-  - [ ] **Task:** Frontend: Integrate `react-markdown` for rendering message content.
-  - [ ] **Task:** Frontend: Add "Copy to Clipboard" button for code blocks and messages.
+
+- **Story 6.1: Streaming Chat Response**
+
+  - [x] **Task:** Backend: Modify `ChatController` to return `Flux<String>` or `SseEmitter` for streaming.
+
+  - [x] **Task:** Backend: Update `ChatService` to use Gemini's streaming generation API.
+
+  - [x] **Task:** Frontend: Update `chatService.ts` to handle streaming response.
+
+  - [x] **Task:** Frontend: Update Chat UI to render streamed tokens in real-time.
+
+
+
+- **Story 6.2: Rich Content & Interaction**
+
+  - [x] **Task:** Frontend: Integrate `react-markdown` for rendering message content.
+
+  - [x] **Task:** Frontend: Add "Copy to Clipboard" icon button for code blocks and messages.
+
+  - [x] **Task:** Frontend: Add Thumbs Up/Down icons for feedback on AI responses.
+
+
+
+- **Story 6.3: Citations Handling**
+
+  - [x] **Task:** Frontend: Ensure Markdown renders citations references properly.
+
+  - [x] **Task:** Frontend: Deduplicate citations (show unique links only).
 
 ## Epic 7: UI Polish
 
 **Goal:** Modernize the application with responsiveness and theming.
 
-- **Story 7.1: Mobile-First Responsive Design**
-  - [ ] **Task:** Implement collapsible Sidebar (Drawer) for mobile.
+- **Story 7.1: Responsive & Collapsible Layout**
+
+  - [ ] **Task:** Implement collapsible Sidebar (Desktop: collapse to icons, Mobile: Drawer).
   - [ ] **Task:** Refactor Page Layouts (Grid/Flex) to stack correctly on small screens.
   - [ ] **Task:** Ensure touch targets are accessible.
 
