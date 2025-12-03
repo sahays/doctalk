@@ -128,12 +128,12 @@
 
 - **Story 7.1: Responsive & Collapsible Layout**
 
-  - [ ] **Task:** Implement collapsible Sidebar (Desktop: collapse to icons, Mobile: Drawer).
-  - [ ] **Task:** Refactor Page Layouts (Grid/Flex) to stack correctly on small screens.
-  - [ ] **Task:** Ensure touch targets are accessible.
+  - [x] **Task:** Implement collapsible Sidebar (Desktop: collapse to icons, Mobile: Drawer).
+  - [x] **Task:** Refactor Page Layouts (Grid/Flex) to stack correctly on small screens.
+  - [x] **Task:** Ensure touch targets are accessible.
 
 - **Story 7.2: Theming (Dark/Light)**
-  - [ ] **Task:** Setup `next-themes` provider.
-  - [ ] **Task:** Update Tailwind config for dark mode classes.
-  - [ ] **Task:** Add Theme Toggle in Sidebar or Header.
-  - [ ] **Task:** Ensure all components support dark mode variants.
+  - [x] **Task:** Setup `next-themes` provider.
+  - [x] **Task:** Update Tailwind config for dark mode classes.
+  - [x] **Task:** Add Theme Toggle in Sidebar or Header.
+  - [x] **Task:** Ensure all components support dark mode variants.

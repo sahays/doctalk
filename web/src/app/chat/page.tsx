@@ -209,37 +209,37 @@ export default function ChatPage() {
 
     if (!activeProject) {
         return (
-            <div className="flex items-center justify-center h-screen bg-slate-50">
-                <div className="text-center p-8 bg-white rounded-xl shadow-sm border border-gray-200">
-                    <MessageSquare className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                    <h2 className="text-xl font-semibold text-gray-800">No Project Selected</h2>
-                    <p className="text-gray-500 mt-2">Please select a project from the sidebar to start chatting.</p>
+            <div className="flex items-center justify-center h-screen bg-muted/30">
+                <div className="text-center p-8 bg-card rounded-xl shadow-sm border border-border">
+                    <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <h2 className="text-xl font-semibold text-foreground">No Project Selected</h2>
+                    <p className="text-muted-foreground mt-2">Please select a project from the sidebar to start chatting.</p>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="flex h-screen bg-slate-50 overflow-hidden">
+        <div className="flex h-screen bg-muted/30 overflow-hidden">
             {/* Left Sidebar: Sessions */}
-            <div className="w-80 bg-white border-r border-gray-200 flex flex-col shrink-0">
-                <div className="p-4 border-b border-gray-100">
-                    <Button onClick={handleNewChat} className="w-full justify-start bg-purple-600 hover:bg-purple-700 text-white shadow-sm">
+            <div className="w-80 bg-background border-r border-border flex flex-col shrink-0">
+                <div className="p-4 border-b border-border">
+                    <Button onClick={handleNewChat} className="w-full justify-start shadow-sm">
                         <Plus className="mr-2 h-4 w-4" /> New Chat
                     </Button>
                 </div>
                 
                 <div className="flex-1 overflow-y-auto p-3 space-y-2">
                     {sessions.length === 0 ? (
-                        <p className="text-center text-xs text-gray-400 mt-8">No chat history</p>
+                        <p className="text-center text-xs text-muted-foreground mt-8">No chat history</p>
                     ) : (
                         sessions.map(session => (
                             <div
                                 key={session.id}
                                 onClick={() => !editingSessionId && setActiveSessionId(session.id)}
                                 className={cn(
-                                    "w-full text-left p-3 rounded-lg text-sm transition-all hover:bg-purple-50 group border border-transparent relative flex items-center justify-between cursor-pointer",
-                                    activeSessionId === session.id ? "bg-purple-50 border-purple-100" : ""
+                                    "w-full text-left p-3 rounded-lg text-sm transition-all hover:bg-muted group border border-transparent relative flex items-center justify-between cursor-pointer",
+                                    activeSessionId === session.id ? "bg-muted border-border" : ""
                                 )}
                             >
                                 {editingSessionId === session.id ? (
@@ -247,7 +247,7 @@ export default function ChatPage() {
                                         <input 
                                             value={editTitle}
                                             onChange={(e) => setEditTitle(e.target.value)}
-                                            className="flex-1 min-w-0 bg-white border border-purple-200 rounded px-2 py-1 text-xs outline-none"
+                                            className="flex-1 min-w-0 bg-background border border-primary rounded px-2 py-1 text-xs outline-none text-foreground"
                                             autoFocus
                                             onKeyDown={(e) => {
                                                 if (e.key === 'Enter') handleRename(session.id);
@@ -255,30 +255,30 @@ export default function ChatPage() {
                                             }}
                                         />
                                         <button onClick={() => handleRename(session.id)} className="p-1 text-green-600 hover:bg-green-50 rounded"><Check className="h-3 w-3" /></button>
-                                        <button onClick={() => setEditingSessionId(null)} className="p-1 text-gray-400 hover:bg-gray-100 rounded"><X className="h-3 w-3" /></button>
+                                        <button onClick={() => setEditingSessionId(null)} className="p-1 text-muted-foreground hover:bg-muted rounded"><X className="h-3 w-3" /></button>
                                     </div>
                                 ) : (
                                     <>
                                         <div className="flex-1 min-w-0">
                                             <div 
-                                                className={cn("truncate pr-2 font-medium", activeSessionId === session.id ? "text-purple-700" : "text-gray-600")}
+                                                className={cn("truncate pr-2 font-medium", activeSessionId === session.id ? "text-primary" : "text-foreground")}
                                                 onDoubleClick={(e) => startEditing(e, session)}
                                                 title="Double-click to rename"
                                             >
                                                 {session.title || "New Chat"}
                                             </div>
-                                            <div className="text-[10px] text-gray-400 mt-0.5">{timeAgo(session.createdAt)}</div>
+                                            <div className="text-[10px] text-muted-foreground mt-0.5">{timeAgo(session.createdAt)}</div>
                                         </div>
                                         <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
                                             <button 
                                                 onClick={(e) => startEditing(e, session)}
-                                                className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                                                className="p-1.5 text-muted-foreground hover:text-primary hover:bg-muted rounded-md transition-colors"
                                             >
                                                 <Edit2 className="h-3 w-3" />
                                             </button>
                                             <button 
                                                 onClick={(e) => handleDelete(e, session.id)}
-                                                className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                                                className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-muted rounded-md transition-colors"
                                             >
                                                 <Trash2 className="h-3 w-3" />
                                             </button>
@@ -292,18 +292,18 @@ export default function ChatPage() {
             </div>
 
             {/* Main Chat Area */}
-            <div className="flex-1 flex flex-col min-w-0 bg-white/50">
+            <div className="flex-1 flex flex-col min-w-0 bg-muted/10">
                 {/* Header */}
-                <header className="h-16 border-b border-gray-200 bg-white px-6 flex items-center justify-between shrink-0">
+                <header className="h-16 border-b border-border bg-background px-6 flex items-center justify-between shrink-0">
                     <div className="flex items-center gap-2 overflow-hidden">
-                        <h2 className="font-semibold text-gray-800 truncate">
+                        <h2 className="font-semibold text-foreground truncate">
                             {activeSessionId ? sessions.find(s => s.id === activeSessionId)?.title : 'New Conversation'}
                         </h2>
-                        {activeSessionId && <span className="text-xs px-2 py-0.5 bg-gray-100 rounded-full text-gray-500">History</span>}
+                        {activeSessionId && <span className="text-xs px-2 py-0.5 bg-muted rounded-full text-muted-foreground">History</span>}
                     </div>
 
                     <div className="flex items-center gap-3">
-                        <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">System Instruction:</span>
+                        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">System Instruction:</span>
                         <Select 
                             value={selectedPromptId} 
                             onValueChange={setSelectedPromptId}
@@ -325,11 +325,11 @@ export default function ChatPage() {
                 {/* Messages List */}
                 <div className="flex-1 overflow-y-auto p-6 space-y-6">
                     {messages.length === 0 ? (
-                        <div className="h-full flex flex-col items-center justify-center text-gray-400">
-                            <div className="w-16 h-16 bg-purple-50 rounded-full flex items-center justify-center mb-4">
-                                <Bot className="h-8 w-8 text-purple-400" />
+                        <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
+                            <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
+                                <Bot className="h-8 w-8 text-muted-foreground" />
                             </div>
-                            <p className="text-sm font-medium text-gray-900">Start a new conversation</p>
+                            <p className="text-sm font-medium text-foreground">Start a new conversation</p>
                             <p className="text-xs mt-1">Select a system instruction and type your message.</p>
                         </div>
                     ) : (
@@ -343,9 +343,9 @@ export default function ChatPage() {
                             >
                                 <div className={cn(
                                     "w-8 h-8 rounded-full flex items-center justify-center shrink-0 shadow-sm",
-                                    msg.role === 'USER' ? "bg-purple-600" : "bg-teal-600"
+                                    msg.role === 'USER' ? "bg-primary" : "bg-muted"
                                 )}>
-                                    {msg.role === 'USER' ? <User className="h-4 w-4 text-white" /> : <Bot className="h-4 w-4 text-white" />}
+                                    {msg.role === 'USER' ? <User className="h-4 w-4 text-primary-foreground" /> : <Bot className="h-4 w-4 text-muted-foreground" />}
                                 </div>
                                 
                                 <div className={cn(
@@ -355,8 +355,8 @@ export default function ChatPage() {
                                     <div className={cn(
                                         "p-4 rounded-2xl shadow-sm text-sm leading-relaxed overflow-hidden",
                                         msg.role === 'USER' 
-                                            ? "bg-purple-600 text-white rounded-tr-none" 
-                                            : "bg-white border border-gray-100 text-gray-800 rounded-tl-none"
+                                            ? "bg-primary text-primary-foreground rounded-tr-none" 
+                                            : "bg-card border border-border text-card-foreground rounded-tl-none"
                                     )}>
                                         {msg.role === 'USER' ? (
                                             <div className="whitespace-pre-wrap">{msg.content}</div>
@@ -366,7 +366,7 @@ export default function ChatPage() {
                                                 components={{
                                                     // Custom link renderer for citations/footnotes
                                                     a: ({node, ...props}) => (
-                                                        <a {...props} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline" />
+                                                        <a {...props} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline" />
                                                     ),
                                                     // Add styling for code blocks
                                                     code: ({node, className, children, ...props}) => {
@@ -376,14 +376,14 @@ export default function ChatPage() {
                                                         if (!isInline) {
                                                             return (
                                                                 <div className="relative my-2">
-                                                                    <div className="bg-gray-800 text-gray-100 p-3 rounded-md overflow-x-auto text-xs">
+                                                                    <div className="bg-muted text-muted-foreground p-3 rounded-md overflow-x-auto text-xs">
                                                                         <code className={className} {...props}>
                                                                             {children}
                                                                         </code>
                                                                     </div>
                                                                     <button 
                                                                         onClick={() => copyToClipboard(String(children))}
-                                                                        className="absolute top-2 right-2 p-1 text-gray-400 hover:text-white bg-gray-700/50 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                                                                        className="absolute top-2 right-2 p-1 text-muted-foreground hover:text-foreground bg-background/50 rounded opacity-0 group-hover:opacity-100 transition-opacity"
                                                                     >
                                                                         <Copy className="h-3 w-3" />
                                                                     </button>
@@ -392,7 +392,7 @@ export default function ChatPage() {
                                                         }
                                                         
                                                         return (
-                                                            <code className="bg-gray-100 px-1 py-0.5 rounded text-red-500 font-mono text-xs" {...props}>
+                                                            <code className="bg-muted px-1 py-0.5 rounded text-red-500 font-mono text-xs" {...props}>
                                                                 {children}
                                                             </code>
                                                         );
@@ -411,7 +411,7 @@ export default function ChatPage() {
                                                     href={cite.uri} 
                                                     target="_blank" 
                                                     rel="noopener noreferrer"
-                                                    className="flex items-center gap-1 text-[10px] bg-blue-50 text-blue-600 px-2 py-1 rounded-full border border-blue-100 hover:bg-blue-100 transition-colors"
+                                                    className="flex items-center gap-1 text-[10px] bg-muted text-primary px-2 py-1 rounded-full border border-border hover:bg-muted/80 transition-colors"
                                                 >
                                                     <FileText className="h-3 w-3" />
                                                     <span className="truncate max-w-[150px]">{cite.title || 'Source Document'}</span>
@@ -425,16 +425,16 @@ export default function ChatPage() {
                                         <div className="flex items-center gap-2 mt-1 px-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                             <button 
                                                 onClick={() => copyToClipboard(msg.content)}
-                                                className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
+                                                className="p-1 text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors"
                                                 title="Copy full response"
                                             >
                                                 <Copy className="h-3 w-3" />
                                             </button>
-                                            <div className="h-3 w-px bg-gray-200 mx-1"></div>
-                                            <button className="p-1 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded transition-colors">
+                                            <div className="h-3 w-px bg-border mx-1"></div>
+                                            <button className="p-1 text-muted-foreground hover:text-green-600 hover:bg-muted rounded transition-colors">
                                                 <ThumbsUp className="h-3 w-3" />
                                             </button>
-                                            <button className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors">
+                                            <button className="p-1 text-muted-foreground hover:text-red-600 hover:bg-muted rounded transition-colors">
                                                 <ThumbsDown className="h-3 w-3" />
                                             </button>
                                         </div>
@@ -445,24 +445,24 @@ export default function ChatPage() {
                     )}
                     {sending && !streamStatus && (
                         <div className="flex gap-4 max-w-3xl mx-auto animate-pulse">
-                            <div className="w-8 h-8 rounded-full bg-teal-600 flex items-center justify-center shrink-0">
-                                <Bot className="h-4 w-4 text-white" />
+                            <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0">
+                                <Bot className="h-4 w-4 text-muted-foreground" />
                             </div>
-                            <div className="p-4 rounded-2xl rounded-tl-none bg-white border border-gray-100 shadow-sm w-32 h-10 flex items-center gap-1">
-                                <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
-                                <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
-                                <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce"></span>
+                            <div className="p-4 rounded-2xl rounded-tl-none bg-card border border-border shadow-sm w-32 h-10 flex items-center gap-1">
+                                <span className="w-1.5 h-1.5 bg-muted-foreground rounded-full animate-bounce [animation-delay:-0.3s]"></span>
+                                <span className="w-1.5 h-1.5 bg-muted-foreground rounded-full animate-bounce [animation-delay:-0.15s]"></span>
+                                <span className="w-1.5 h-1.5 bg-muted-foreground rounded-full animate-bounce"></span>
                             </div>
                         </div>
                     )}
                     {/* Status Indicator */}
                     {streamStatus && (
                          <div className="flex gap-4 max-w-3xl mx-auto">
-                            <div className="w-8 h-8 rounded-full bg-teal-600 flex items-center justify-center shrink-0">
-                                <Bot className="h-4 w-4 text-white" />
+                            <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0">
+                                <Bot className="h-4 w-4 text-muted-foreground" />
                             </div>
                             <div className="flex items-center p-4">
-                                <span className="text-xs text-gray-500 font-medium animate-pulse uppercase tracking-wide flex items-center gap-2">
+                                <span className="text-xs text-muted-foreground font-medium animate-pulse uppercase tracking-wide flex items-center gap-2">
                                     <Loader2 className="h-3 w-3 animate-spin" />
                                     {streamStatus}
                                 </span>
@@ -473,27 +473,27 @@ export default function ChatPage() {
                 </div>
 
                 {/* Input Area */}
-                <div className="p-6 bg-white border-t border-gray-200 shrink-0">
+                <div className="p-6 bg-background border-t border-border shrink-0">
                     <div className="max-w-3xl mx-auto relative">
                         <textarea
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
                             onKeyDown={handleKeyDown}
                             placeholder={activeSessionId ? "Reply to this conversation..." : "Start a new conversation..."}
-                            className="w-full p-4 pr-14 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none resize-none min-h-[60px] max-h-[200px] shadow-inner text-sm"
+                            className="w-full p-4 pr-14 bg-muted/50 border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none resize-none min-h-[60px] max-h-[200px] shadow-inner text-sm text-foreground placeholder:text-muted-foreground"
                             rows={1}
-                            style={{ minHeight: '60px' }} // Simple auto-height hack or use library
+                            style={{ minHeight: '60px' }}
                         />
                         <Button 
                             onClick={handleSend}
                             disabled={!input.trim() || sending}
-                            className="absolute right-2 bottom-2 h-10 w-10 p-0 rounded-lg bg-purple-600 hover:bg-purple-700 text-white shadow-sm"
+                            className="absolute right-2 bottom-2 h-10 w-10 p-0 rounded-lg shadow-sm"
                         >
                             {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                         </Button>
                     </div>
                     <div className="max-w-3xl mx-auto text-center mt-2">
-                        <p className="text-[10px] text-gray-400">
+                        <p className="text-[10px] text-muted-foreground">
                             AI responses are grounded in your project documents. Check citations for accuracy.
                         </p>
                     </div>
