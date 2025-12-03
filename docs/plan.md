@@ -88,11 +88,7 @@
 
 ## Epic 6: Chat Improvements
 
-
-
 **Goal:** Enhance the chat experience with real-time streaming, rich text formatting, and usability features.
-
-
 
 - **Story 6.1: Streaming Chat Response**
 
@@ -104,8 +100,6 @@
 
   - [x] **Task:** Frontend: Update Chat UI to render streamed tokens in real-time.
 
-
-
 - **Story 6.2: Rich Content & Interaction**
 
   - [x] **Task:** Frontend: Integrate `react-markdown` for rendering message content.
@@ -113,8 +107,6 @@
   - [x] **Task:** Frontend: Add "Copy to Clipboard" icon button for code blocks and messages.
 
   - [x] **Task:** Frontend: Add Thumbs Up/Down icons for feedback on AI responses.
-
-
 
 - **Story 6.3: Citations Handling**
 
@@ -137,3 +129,14 @@
   - [x] **Task:** Update Tailwind config for dark mode classes.
   - [x] **Task:** Add Theme Toggle in Sidebar or Header.
   - [x] **Task:** Ensure all components support dark mode variants.
+
+## Epic 8: Bulk Document Import
+
+**Goal:** Allow users to import documents in bulk from external Cloud Storage buckets (GCS & S3).
+
+- **Story 8.1: Server-to-Server Import**
+  - [x] **Task:** Backend: Add `google-cloud-storage-transfer` dependency.
+  - [x] **Task:** Backend: Implement `DocumentImportService` for GCS (Copy) and S3 (Transfer Service).
+  - [x] **Task:** Backend: Create `ImportController` endpoint.
+  - [x] **Task:** Frontend: Create `ImportDocumentsDialog` with GCS/S3 tabs and credentials form.
+  - [x] **Task:** Frontend: Integrate Import button into `DocumentsPage`.

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { FileUpload } from '@/components/documents/FileUpload';
 import { DocumentList } from '@/components/documents/DocumentList';
+import { ImportDocumentsDialog } from '@/components/documents/ImportDocumentsDialog';
 import { useProjectStore } from '@/store/projectStore';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
@@ -33,10 +34,15 @@ export default function DocumentsPage() {
                 <div className="grid gap-8">
                     {/* Upload Section */}
                     <div className="bg-white p-8 rounded-xl shadow-xl border border-gray-100">
-                        <h2 className="text-xl font-bold text-gray-800 mb-2">Upload Files</h2>
-                        <p className="text-gray-500 mb-6 text-sm">
-                            Add PDF, DOCX, or TXT files to your knowledge base.
-                        </p>
+                        <div className="flex justify-between items-start mb-6">
+                            <div>
+                                <h2 className="text-xl font-bold text-gray-800 mb-1">Add Documents</h2>
+                                <p className="text-gray-500 text-sm">
+                                    Upload files directly or import from Cloud Storage.
+                                </p>
+                            </div>
+                            <ImportDocumentsDialog />
+                        </div>
                         <FileUpload onUploadComplete={handleUploadComplete} />
                     </div>
 
