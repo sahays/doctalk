@@ -10,15 +10,25 @@ export interface Project {
     createdAt: string;
     importStatus?: 'IDLE' | 'RUNNING' | 'COMPLETED' | 'FAILED';
     lastIndexedAt?: string;
+    storageMode?: 'MANAGED' | 'BYOB';
+    bucketName?: string;
+    bucketPrefix?: string;
 }
 
-export async function createProject(name: string): Promise<Project> {
+export interface CreateProjectRequest {
+    name: string;
+    storageMode?: 'MANAGED' | 'BYOB';
+    bucketName?: string;
+    bucketPrefix?: string;
+}
+
+export async function createProject(request: CreateProjectRequest): Promise<Project> {
     const response = await fetch(`${API_BASE_URL}/projects`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ name }),
+        body: JSON.stringify(request),
     });
     if (!response.ok) throw new Error('Failed to create project');
     return response.json();

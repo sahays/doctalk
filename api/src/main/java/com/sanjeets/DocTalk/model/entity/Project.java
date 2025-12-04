@@ -12,6 +12,11 @@ public class Project {
     private String importStatus; // IDLE, RUNNING, COMPLETED, FAILED
     private String lastIndexedAt;
 
+    // Storage configuration (Epic 8)
+    private StorageMode storageMode; // MANAGED or BYOB
+    private String bucketName;       // For BYOB: user's bucket, For MANAGED: our bucket
+    private String bucketPrefix;     // For BYOB: user's prefix, For MANAGED: same as gcsPrefix
+
     public Project() {}
 
     public Project(String id, String name, ProjectStatus status, String gcsPrefix, String dataStoreId, String engineId, String createdAt) {
@@ -55,4 +60,13 @@ public class Project {
 
     public String getLastIndexedAt() { return lastIndexedAt; }
     public void setLastIndexedAt(String lastIndexedAt) { this.lastIndexedAt = lastIndexedAt; }
+
+    public StorageMode getStorageMode() { return storageMode; }
+    public void setStorageMode(StorageMode storageMode) { this.storageMode = storageMode; }
+
+    public String getBucketName() { return bucketName; }
+    public void setBucketName(String bucketName) { this.bucketName = bucketName; }
+
+    public String getBucketPrefix() { return bucketPrefix; }
+    public void setBucketPrefix(String bucketPrefix) { this.bucketPrefix = bucketPrefix; }
 }

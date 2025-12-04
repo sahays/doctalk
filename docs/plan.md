@@ -130,13 +130,29 @@
   - [x] **Task:** Add Theme Toggle in Sidebar or Header.
   - [x] **Task:** Ensure all components support dark mode variants.
 
-## Epic 8: Bulk Document Import
+## Epic 8: Flexible Project Storage Configuration (Revised)
 
-**Goal:** Allow users to import documents in bulk from external Cloud Storage buckets (GCS & S3).
+**Goal:** Allow projects to use either managed storage (our bucket) or user-owned GCS buckets (BYOB).
 
-- **Story 8.1: Server-to-Server Import**
-  - [x] **Task:** Backend: Add `google-cloud-storage-transfer` dependency.
-  - [x] **Task:** Backend: Implement `DocumentImportService` for GCS (Copy) and S3 (Transfer Service).
-  - [x] **Task:** Backend: Create `ImportController` endpoint.
-  - [x] **Task:** Frontend: Create `ImportDocumentsDialog` with GCS/S3 tabs and credentials form.
-  - [x] **Task:** Frontend: Integrate Import button into `DocumentsPage`.
+- **Story 8.1: Project Storage Mode**
+  - [x] **Task:** Backend: Add `storageMode`, `bucketName`, `bucketPrefix` to Project entity.
+  - [x] **Task:** Backend: Update `ProjectService.createProject()` to accept bucket configuration.
+  - [x] **Task:** Backend: Update Project API to include storage config in requests/responses.
+
+- **Story 8.2: Bucket-Aware Services**
+  - [x] **Task:** Backend: Make `DocumentService` bucket-aware (use project's bucket config).
+  - [x] **Task:** Backend: Update `SearchInfraService.importDocuments()` to accept bucket parameter.
+  - [x] **Task:** Backend: Use FULL reconciliation for BYOB, INCREMENTAL for Managed mode.
+
+- **Story 8.3: Frontend Storage Selection**
+  - [x] **Task:** Frontend: Add storage mode selector to CreateProjectDialog.
+  - [x] **Task:** Frontend: Add bucket/prefix inputs for BYOB mode with validation.
+  - [x] **Task:** Frontend: Show permission grant instructions after BYOB project creation.
+  - [x] **Task:** Frontend: Update Documents page to handle BYOB mode (show instructions vs upload).
+  - [x] **Task:** Frontend: Add help text explaining Managed vs BYOB trade-offs.
+
+- **Story 8.4: Cleanup Legacy Import**
+  - [x] **Task:** Backend: Remove `ImportController`, `DocumentImportService`, `ImportRequest`.
+  - [x] **Task:** Backend: Remove `google-cloud-storage-transfer` dependency.
+  - [x] **Task:** Frontend: Remove `ImportDocumentsDialog` component.
+  - [x] **Task:** Frontend: Remove import button from Documents page.

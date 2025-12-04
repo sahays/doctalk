@@ -65,7 +65,10 @@ public class SearchInfraService {
             // 3. Import Documents (Initial Sync)
             // Note: This triggers a long-running import job.
             // Ideally, we should wait or track this separately, but for MVP we assume readiness after Engine creation.
-            importDocuments(projectId, dataStoreId, project.getGcsPrefix());
+            String bucketName = project.getBucketName() != null ? project.getBucketName() : this.bucketName;
+            String bucketPrefix = project.getBucketPrefix() != null ? project.getBucketPrefix() : project.getGcsPrefix();
+            boolean useFullSync = project.getStorageMode() == com.sanjeets.DocTalk.model.entity.StorageMode.BYOB;
+            importDocuments(projectId, dataStoreId, bucketName, bucketPrefix, useFullSync);
             project.setLastIndexedAt(Instant.now().toString());
 
             // 4. Complete
@@ -135,27 +138,32 @@ public class SearchInfraService {
         }
     }
 
-    public String importDocuments(String projectId, String dataStoreId, String gcsPrefix) {
+    public String importDocuments(String projectId, String dataStoreId, String bucketName, String bucketPrefix, boolean useFullSync) {
         try (DocumentServiceClient client = DocumentServiceClient.create()) {
              String parent = String.format("projects/%s/locations/%s/collections/default_collection/dataStores/%s/branches/default_branch", gcpProjectId, location, dataStoreId);
-             
+
              // GCS URI: gs://bucket/prefix/*
-             String gcsUri = String.format("gs://%s/%s*", bucketName, gcsPrefix);
-             
+             String gcsUri = String.format("gs://%s/%s*", bucketName, bucketPrefix);
+
              GcsSource gcsSource = GcsSource.newBuilder()
                      .addInputUris(gcsUri)
                      .setDataSchema("content")
                      .build();
-             
+
+             // Use FULL mode for BYOB (to remove deleted files), INCREMENTAL for managed
+             ImportDocumentsRequest.ReconciliationMode mode = useFullSync ?
+                     ImportDocumentsRequest.ReconciliationMode.FULL :
+                     ImportDocumentsRequest.ReconciliationMode.INCREMENTAL;
+
              ImportDocumentsRequest request = ImportDocumentsRequest.newBuilder()
                  .setParent(parent)
                  .setGcsSource(gcsSource)
-                 .setReconciliationMode(ImportDocumentsRequest.ReconciliationMode.INCREMENTAL)
+                 .setReconciliationMode(mode)
                  .build();
-             
+
              OperationFuture<ImportDocumentsResponse, ImportDocumentsMetadata> operation = client.importDocumentsAsync(request);
              String opName = operation.getName();
-             log.info("Import operation initiated: {}", opName);
+             log.info("Import operation initiated: {} (mode: {})", opName, mode);
 
              return opName;
         } catch (IOException | InterruptedException | ExecutionException e) {

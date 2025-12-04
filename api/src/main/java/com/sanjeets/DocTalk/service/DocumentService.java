@@ -5,6 +5,8 @@ import com.google.cloud.storage.BlobInfo;
 import com.google.cloud.storage.HttpMethod;
 import com.google.cloud.storage.Storage;
 import com.sanjeets.DocTalk.model.dto.DocumentSummary;
+import com.sanjeets.DocTalk.model.entity.Project;
+import com.sanjeets.DocTalk.repository.ProjectRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -19,16 +21,26 @@ import java.util.stream.StreamSupport;
 public class DocumentService {
 
     private final Storage storage;
+    private final ProjectRepository projectRepository;
 
     @Value("${doctalk.gcs.bucket-name}")
-    private String bucketName;
+    private String defaultBucketName;
 
-    public DocumentService(Storage storage) {
+    public DocumentService(Storage storage, ProjectRepository projectRepository) {
         this.storage = storage;
+        this.projectRepository = projectRepository;
     }
 
     public URL generateUploadSignedUrl(String projectId, String fileName, String contentType) {
-        String objectName = projectId + "/" + fileName;
+        Project project = projectRepository.findById(projectId);
+        if (project == null) {
+            throw new IllegalArgumentException("Project not found: " + projectId);
+        }
+
+        String bucketName = project.getBucketName() != null ? project.getBucketName() : defaultBucketName;
+        String prefix = project.getBucketPrefix() != null ? project.getBucketPrefix() : (projectId + "/");
+        String objectName = prefix + fileName;
+
         BlobInfo blobInfo = BlobInfo.newBuilder(bucketName, objectName)
                 .setContentType(contentType)
                 .build();
@@ -47,17 +59,25 @@ public class DocumentService {
     }
 
     public List<DocumentSummary> listDocuments(String projectId) {
+        Project project = projectRepository.findById(projectId);
+        if (project == null) {
+            throw new IllegalArgumentException("Project not found: " + projectId);
+        }
+
+        String bucketName = project.getBucketName() != null ? project.getBucketName() : defaultBucketName;
+        String prefix = project.getBucketPrefix() != null ? project.getBucketPrefix() : (projectId + "/");
+
         var bucket = storage.get(bucketName);
         if (bucket == null) {
             throw new RuntimeException("GCS Bucket '" + bucketName + "' not found. Please verify configuration.");
         }
-        
-        Iterable<Blob> blobs = bucket.list(Storage.BlobListOption.prefix(projectId + "/")).iterateAll();
+
+        Iterable<Blob> blobs = bucket.list(Storage.BlobListOption.prefix(prefix)).iterateAll();
 
         return StreamSupport.stream(blobs.spliterator(), false)
                 .filter(blob -> !blob.getName().endsWith("/")) // Exclude the folder itself if returned
                 .map(blob -> DocumentSummary.builder()
-                        .name(blob.getName().substring(projectId.length() + 1)) // Strip prefix from name for display
+                        .name(blob.getName().substring(prefix.length())) // Strip prefix from name for display
                         .contentType(blob.getContentType())
                         .size(blob.getSize())
                         .timeCreated(blob.getCreateTimeOffsetDateTime().toString())
@@ -67,7 +87,15 @@ public class DocumentService {
     }
 
     public void deleteDocument(String projectId, String fileName) {
-        String objectName = projectId + "/" + fileName;
+        Project project = projectRepository.findById(projectId);
+        if (project == null) {
+            throw new IllegalArgumentException("Project not found: " + projectId);
+        }
+
+        String bucketName = project.getBucketName() != null ? project.getBucketName() : defaultBucketName;
+        String prefix = project.getBucketPrefix() != null ? project.getBucketPrefix() : (projectId + "/");
+        String objectName = prefix + fileName;
+
         boolean deleted = storage.delete(bucketName, objectName);
         if (!deleted) {
             throw new RuntimeException("Failed to delete document: " + objectName + " (it might not exist)");

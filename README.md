@@ -4,15 +4,14 @@ AI-powered document analysis and chat system using Google Vertex AI Search and G
 
 ## Tech Stack
 
-**Backend:** Spring Boot 3.4 (Java 21), Google Cloud Platform
-**Frontend:** Next.js 16, React, TypeScript, Tailwind CSS
+**Backend:** Spring Boot 3.4 (Java 21), Google Cloud Platform **Frontend:** Next.js 16, React, TypeScript, Tailwind CSS
 **Infrastructure:** Vertex AI Search, Firestore, Cloud Storage, Gemini 2.5 Pro
 
 ## Features
 
 - **Project Management** - Organize documents into isolated projects
 - **Document Storage** - Upload PDFs, DOCX, TXT via signed URLs to GCS
-- **Bulk Import** - Server-to-server import from GCS or S3 buckets
+- **Flexible Storage** - Use managed storage or Bring Your Own Bucket (BYOB) from GCS
 - **RAG Chat** - Context-aware chat with document grounding and citations
 - **Search Infrastructure** - Auto-provision Vertex AI Search datastores per project
 - **System Instructions** - Customizable AI personas/prompts
@@ -37,7 +36,6 @@ roles/firestore.user
 roles/storage.admin
 roles/discoveryengine.admin
 roles/aiplatform.user
-roles/storagetransfer.admin (for S3 imports)
 ```
 
 Enable APIs:
@@ -47,8 +45,7 @@ gcloud services enable \
   firestore.googleapis.com \
   storage.googleapis.com \
   discoveryengine.googleapis.com \
-  aiplatform.googleapis.com \
-  storagetransfer.googleapis.com
+  aiplatform.googleapis.com
 ```
 
 ### Environment Variables
@@ -92,25 +89,23 @@ Frontend runs on `http://localhost:3000`
 
 ## Usage
 
-1. **Create Project** - Set up a new document project
-2. **Upload Documents** - Add files directly or import from cloud storage
+1. **Create Project** - Set up a new document project (Managed or BYOB)
+2. **Upload Documents** - Add files directly or use your external bucket
 3. **Provision Search** - Automatically creates Vertex AI datastore
 4. **Sync Index** - Import documents into the search index
 5. **Create Chat** - Select a system instruction and start chatting
 6. **Query Documents** - Ask questions and get cited answers
 
-## Import from External Storage
+## Storage Configuration
 
-**GCS:** Service account needs `Storage Object Viewer` on source bucket
+**Managed Mode:**
+- We host your files in our central GCS bucket.
+- You upload files directly via the UI.
 
-**S3:** Provide read-only IAM credentials:
-```json
-{
-  "Effect": "Allow",
-  "Action": ["s3:ListBucket", "s3:GetObject"],
-  "Resource": ["arn:aws:s3:::bucket", "arn:aws:s3:::bucket/*"]
-}
-```
+**BYOB Mode (Bring Your Own Bucket):**
+- You provide your own GCS bucket name and optional prefix.
+- You manage file uploads using `gsutil` or the GCS Console.
+- **Requirement:** Our service account needs `Storage Object Viewer` permission on your bucket.
 
 ## Architecture
 

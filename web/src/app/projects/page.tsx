@@ -12,7 +12,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { createProject, getProjects, provisionProject, syncProject, getIndexingStatus, Project } from '@/services/projectService';
+import { createProject, getProjects, provisionProject, syncProject, getIndexingStatus, Project, CreateProjectRequest } from '@/services/projectService';
 import { useProjectStore } from '@/store/projectStore';
 import { useRouter } from 'next/navigation';
 import { cn, timeAgo } from '@/lib/utils';
@@ -20,6 +20,17 @@ import { PageHeader } from '@/components/layout/PageHeader';
 
 const projectSchema = z.object({
     name: z.string().min(3, 'Name must be at least 3 characters'),
+    storageMode: z.enum(['MANAGED', 'BYOB']),
+    bucketName: z.string().optional(),
+    bucketPrefix: z.string().optional(),
+}).refine((data) => {
+    if (data.storageMode === 'BYOB' && !data.bucketName) {
+        return false;
+    }
+    return true;
+}, {
+    message: "Bucket name is required for BYOB mode",
+    path: ["bucketName"],
 });
 
 type ProjectForm = z.infer<typeof projectSchema>;
@@ -33,9 +44,14 @@ export default function ProjectsPage() {
     const [indexingCounts, setIndexingCounts] = useState<Record<string, number>>({});
     const router = useRouter();
 
-    const { register, handleSubmit, reset, formState: { errors } } = useForm<ProjectForm>({
+    const { register, handleSubmit, reset, watch, formState: { errors } } = useForm<ProjectForm>({
         resolver: zodResolver(projectSchema),
+        defaultValues: {
+            storageMode: 'MANAGED',
+        }
     });
+
+    const storageMode = watch('storageMode');
 
     useEffect(() => {
         setLoading(true);
@@ -77,7 +93,13 @@ export default function ProjectsPage() {
     const onSubmit = async (data: ProjectForm) => {
         setCreating(true);
         try {
-            const newProject = await createProject(data.name);
+            const request: CreateProjectRequest = {
+                name: data.name,
+                storageMode: data.storageMode,
+                bucketName: data.bucketName,
+                bucketPrefix: data.bucketPrefix,
+            };
+            const newProject = await createProject(request);
             setProjects([...projects, newProject]);
             reset();
             setIsCreateOpen(false);
@@ -153,25 +175,102 @@ export default function ProjectsPage() {
                 {/* Create Project Form */}
                 <div className={cn(
                     "mb-8 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden transition-all duration-300 ease-in-out",
-                    isCreateOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0 border-0 m-0"
+                    isCreateOpen ? "max-h-[600px] opacity-100" : "max-h-0 opacity-0 border-0 m-0"
                 )}>
                     <div className="p-8">
                         <h2 className="text-xl font-bold text-gray-800 mb-2">Create New Project</h2>
-                        <p className="text-gray-500 mb-6 text-sm">Give your new workspace a name to get started.</p>
-                        <form onSubmit={handleSubmit(onSubmit)} className="flex gap-4 items-start">
-                            <div className="flex-1">
+                        <p className="text-gray-500 mb-6 text-sm">Configure your project workspace and storage.</p>
+                        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Project Name</label>
                                 <input
                                     {...register('name')}
                                     placeholder="e.g., HR Policies 2025"
                                     className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all"
                                     autoFocus
                                 />
-                                {errors.name && <p className="text-red-500 text-sm mt-1 ml-1">{errors.name.message}</p>}
+                                {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>}
                             </div>
-                            <Button type="submit" disabled={creating} size="lg" className="bg-gradient-to-r from-pink-500 to-purple-500 text-white border-0">
-                                {creating ? <Loader2 className="animate-spin mr-2" /> : null}
-                                Create
-                            </Button>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-3">Storage Configuration</label>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <label className={cn(
+                                        "relative flex flex-col p-4 border-2 rounded-lg cursor-pointer transition-all",
+                                        storageMode === 'MANAGED'
+                                            ? "border-purple-500 bg-purple-50"
+                                            : "border-gray-200 hover:border-gray-300"
+                                    )}>
+                                        <input
+                                            {...register('storageMode')}
+                                            type="radio"
+                                            value="MANAGED"
+                                            className="sr-only"
+                                        />
+                                        <span className="font-medium text-sm">Managed Storage</span>
+                                        <span className="text-xs text-gray-500 mt-1">We host your files</span>
+                                    </label>
+                                    <label className={cn(
+                                        "relative flex flex-col p-4 border-2 rounded-lg cursor-pointer transition-all",
+                                        storageMode === 'BYOB'
+                                            ? "border-purple-500 bg-purple-50"
+                                            : "border-gray-200 hover:border-gray-300"
+                                    )}>
+                                        <input
+                                            {...register('storageMode')}
+                                            type="radio"
+                                            value="BYOB"
+                                            className="sr-only"
+                                        />
+                                        <span className="font-medium text-sm">Bring Your Own Bucket</span>
+                                        <span className="text-xs text-gray-500 mt-1">Use your GCS bucket</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            {storageMode === 'BYOB' && (
+                                <div className="space-y-3 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">GCS Bucket Name *</label>
+                                        <input
+                                            {...register('bucketName')}
+                                            placeholder="e.g., my-company-docs"
+                                            className="w-full p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none text-sm"
+                                        />
+                                        {errors.bucketName && <p className="text-red-500 text-xs mt-1">{errors.bucketName.message}</p>}
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Path Prefix (Optional)</label>
+                                        <input
+                                            {...register('bucketPrefix')}
+                                            placeholder="e.g., documents/2025/"
+                                            className="w-full p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none text-sm"
+                                        />
+                                    </div>
+                                    <div className="text-xs text-gray-600 mt-2">
+                                        <strong>Note:</strong> Grant our service account <code className="bg-white px-1 rounded">Storage Object Viewer</code> permission on your bucket before syncing.
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="flex gap-3 pt-2">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => setIsCreateOpen(false)}
+                                    className="flex-1"
+                                >
+                                    Cancel
+                                </Button>
+                                <Button
+                                    type="submit"
+                                    disabled={creating}
+                                    className="flex-1 bg-gradient-to-r from-pink-500 to-purple-500 text-white border-0"
+                                >
+                                    {creating ? <Loader2 className="animate-spin mr-2" /> : null}
+                                    Create Project
+                                </Button>
+                            </div>
                         </form>
                     </div>
                 </div>

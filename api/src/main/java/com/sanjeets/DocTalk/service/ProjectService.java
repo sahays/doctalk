@@ -1,8 +1,11 @@
 package com.sanjeets.DocTalk.service;
 
+import com.sanjeets.DocTalk.controller.dto.CreateProjectRequest;
 import com.sanjeets.DocTalk.model.entity.Project;
 import com.sanjeets.DocTalk.model.entity.ProjectStatus;
+import com.sanjeets.DocTalk.model.entity.StorageMode;
 import com.sanjeets.DocTalk.repository.ProjectRepository;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -15,25 +18,45 @@ public class ProjectService {
     private final ProjectRepository projectRepository;
     private final SearchInfraService searchInfraService;
 
+    @Value("${doctalk.gcs.bucket-name}")
+    private String defaultBucketName;
+
     public ProjectService(ProjectRepository projectRepository, SearchInfraService searchInfraService) {
         this.projectRepository = projectRepository;
         this.searchInfraService = searchInfraService;
     }
 
-    public Project createProject(String name) {
+    public Project createProject(CreateProjectRequest request) {
         String id = UUID.randomUUID().toString();
         Project project = new Project();
         project.setId(id);
-        project.setName(name);
+        project.setName(request.getName());
         project.setStatus(ProjectStatus.CREATED);
-        project.setGcsPrefix(id + "/"); // Simple prefix strategy
+        project.setGcsPrefix(id + "/"); // For backward compatibility
         project.setCreatedAt(Instant.now().toString());
-        
+
+        // Configure storage mode
+        StorageMode mode = StorageMode.MANAGED; // Default
+        if ("BYOB".equalsIgnoreCase(request.getStorageMode())) {
+            mode = StorageMode.BYOB;
+        }
+        project.setStorageMode(mode);
+
+        if (mode == StorageMode.BYOB) {
+            // User's own bucket
+            project.setBucketName(request.getBucketName());
+            project.setBucketPrefix(request.getBucketPrefix() != null ? request.getBucketPrefix() : "");
+        } else {
+            // Managed storage
+            project.setBucketName(defaultBucketName);
+            project.setBucketPrefix(id + "/");
+        }
+
         projectRepository.save(project);
-        
+
         // Trigger Async Provisioning
         searchInfraService.provisionProject(project.getId());
-        
+
         return project;
     }
 
@@ -89,7 +112,16 @@ public class ProjectService {
             }
         }
 
-        String opName = searchInfraService.importDocuments(project.getId(), project.getDataStoreId(), project.getGcsPrefix());
+        // Use reconciliation mode based on storage mode
+        boolean useFullSync = project.getStorageMode() == StorageMode.BYOB;
+
+        String opName = searchInfraService.importDocuments(
+                project.getId(),
+                project.getDataStoreId(),
+                project.getBucketName(),
+                project.getBucketPrefix(),
+                useFullSync
+        );
         project.setLatestImportOperation(opName);
         project.setImportStatus("RUNNING");
         // lastIndexedAt is updated only when the job completes
