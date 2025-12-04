@@ -135,16 +135,19 @@
 **Goal:** Allow projects to use either managed storage (our bucket) or user-owned GCS buckets (BYOB).
 
 - **Story 8.1: Project Storage Mode**
+
   - [x] **Task:** Backend: Add `storageMode`, `bucketName`, `bucketPrefix` to Project entity.
   - [x] **Task:** Backend: Update `ProjectService.createProject()` to accept bucket configuration.
   - [x] **Task:** Backend: Update Project API to include storage config in requests/responses.
 
 - **Story 8.2: Bucket-Aware Services**
+
   - [x] **Task:** Backend: Make `DocumentService` bucket-aware (use project's bucket config).
   - [x] **Task:** Backend: Update `SearchInfraService.importDocuments()` to accept bucket parameter.
   - [x] **Task:** Backend: Use FULL reconciliation for BYOB, INCREMENTAL for Managed mode.
 
 - **Story 8.3: Frontend Storage Selection**
+
   - [x] **Task:** Frontend: Add storage mode selector to CreateProjectDialog.
   - [x] **Task:** Frontend: Add bucket/prefix inputs for BYOB mode with validation.
   - [x] **Task:** Frontend: Show permission grant instructions after BYOB project creation.
